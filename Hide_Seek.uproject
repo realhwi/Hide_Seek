@@ -15,19 +15,31 @@
 	],
 	"Plugins": [
 		{
-			"Name": "ModelingToolsEditorMode",
+			"Name": "OpenXR",
 			"Enabled": true,
-			"TargetAllowList": [
-				"Editor"
+			"SupportedTargetPlatforms": [
+				"Win64",
+				"Linux",
+				"Android"
 			]
 		},
 		{
-			"Name": "RigLogic",
-			"Enabled": true
+			"Name": "OpenXREyeTracker",
+			"Enabled": true,
+			"SupportedTargetPlatforms": [
+				"Win64",
+				"Linux",
+				"Android"
+			]
 		},
 		{
-			"Name": "LiveLink",
-			"Enabled": true
+			"Name": "OpenXRHandTracking",
+			"Enabled": true,
+			"SupportedTargetPlatforms": [
+				"Win64",
+				"Linux",
+				"Android"
+			]
 		},
 		{
 			"Name": "LiveLinkControlRig",
@@ -45,8 +57,30 @@
 			]
 		},
 		{
+			"Name": "RigLogic",
+			"Enabled": true
+		},
+		{
 			"Name": "HairStrands",
 			"Enabled": true
+		},
+		{
+			"Name": "AlembicHairImporter",
+			"Enabled": true
 		}
+	],
+	"TargetPlatforms": [
+		"Android",
+		"IOS",
+		"Linux",
+		"Mac",
+		"PS4",
+		"PS5",
+		"Windows",
+		"WindowsNoEditor",
+		"Switch",
+		"XboxOne",
+		"XSX",
+		"HoloLens"
 	]
 }
