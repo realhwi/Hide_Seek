@@ -18,6 +18,7 @@
 
 DEFINE_LOG_CATEGORY(LogVRCharacter);
 
+
 AVRCharacter::AVRCharacter(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer.SetDefaultSubobjectClass<UVRRootComponent>(ACharacter::CapsuleComponentName).SetDefaultSubobjectClass<UVRCharacterMovementComponent>(ACharacter::CharacterMovementComponentName))
 {

@@ -15,6 +15,7 @@ class VREXPANSIONPLUGIN_API AVRCharacter : public AVRBaseCharacter
 	GENERATED_BODY()
 
 public:
+
 	AVRCharacter(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
 
 	// Overriding teleport so that it auto calls my controllers re-positioning
