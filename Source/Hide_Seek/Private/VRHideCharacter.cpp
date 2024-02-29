@@ -35,18 +35,18 @@ AVRHideCharacter::AVRHideCharacter()
 
 	RightHandMesh->SetupAttachment( RightController );
 
-	/*ConstructorHelpers::FObjectFinder<USkeletalMesh>TempMesh( TEXT(""));
+	ConstructorHelpers::FObjectFinder<USkeletalMesh>TempMesh( TEXT("/Script/Engine.SkeletalMesh'/Game/Characters/MannequinsXR/Meshes/SKM_MannyXR_left.SKM_MannyXR_left'"));
 	if (TempMesh.Succeeded()) 
 	{
 		LeftHandMesh->SetSkeletalMesh( TempMesh.Object );
 		LeftHandMesh ->SetRelativeLocationAndRotation( FVector( -2.981260 , -3.500000 , 4.561753 ) ,FRotator( -25.000000 , -179.999999 , 89.999998 ) );
 	}
-	ConstructorHelpers::FObjectFinder<USkeletalMesh>TempMesh2( TEXT(""));
+	ConstructorHelpers::FObjectFinder<USkeletalMesh>TempMesh2( TEXT("/Script/Engine.SkeletalMesh'/Game/Characters/MannequinsXR/Meshes/SKM_MannyXR_right.SKM_MannyXR_right'"));
 	if (TempMesh2.Succeeded()) 
 	{
 		RightHandMesh->SetSkeletalMesh( TempMesh2.Object );
 		RightHandMesh->SetRelativeLocationAndRotation( FVector( -2.981260 , 3.500000 , 4.561753 ) ,FRotator( 25.000000 , 0.000000 , 89.999999 ) );
-	}*/
+	}
 }
 
 // Called when the game starts or when spawned
@@ -96,9 +96,14 @@ void AVRHideCharacter::Move( const FInputActionValue& Value )
 {
 	FVector2D MovementVector = Value.Get<FVector2D>();
 
-	AddMovementInput( GetActorForwardVector() , MovementVector.X );
-	AddMovementInput( GetActorRightVector() , MovementVector.Y );
+	//PC 일때 사용
+	/*AddMovementInput( GetActorForwardVector() , MovementVector.X );
+	AddMovementInput( GetActorRightVector() , MovementVector.Y );*/
 
+	//VR 일때 카메라 기준으로 해야함
+	//예) GetComponentForward??
+	AddMovementInput( CameraComponent->GetForwardVector() , MovementVector.X );
+	AddMovementInput( CameraComponent->GetRightVector() , MovementVector.Y );
 }
 
 void AVRHideCharacter::Look( const FInputActionValue& Value )
