@@ -1,67 +1,79 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 
 #include "HidePlayer.h"
-#include "Hide_SeekCharacter.h"
-#include "EnhancedInputComponent.h"
-#include "EnhancedInputSubsystems.h"
-#include "InputActionValue.h"
+
+#include <EnhancedInputComponent.h>
+#include <EnhancedInputSubsystems.h>
+#include <InputActionValue.h>
 #include "Engine/LocalPlayer.h"
 
 
 AHidePlayer::AHidePlayer()
 {
+	CameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("CameraComponent"));
+	CameraComponent->SetupAttachment(GetRootComponent());
+	CameraComponent->bUsePawnControlRotation = false;
+	CameraComponent->SetRelativeLocation(FVector(0,80,0));
+
 }
 
 void AHidePlayer::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// Add Input Mapping Context
-	if (APlayerController* PlayerController = Cast<APlayerController>(Controller))
+	APlayerController* Playercontroller =Cast<APlayerController>(GetWorld()->GetFirstPlayerController());
+
+	if(Playercontroller)
 	{
-		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
+		ULocalPlayer* LocalPlayer = Playercontroller->GetLocalPlayer();
+		if(LocalPlayer)
 		{
-			Subsystem->AddMappingContext(DefaultMappingContext, 0);
+			UEnhancedInputLocalPlayerSubsystem* SubSystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>( LocalPlayer );
+			if (SubSystem)
+			{
+				SubSystem->AddMappingContext( IMC_VRInput , 0 );
+			}
 		}
 	}
 }
 
-void AHidePlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
+void AHidePlayer::Tick(float DeltaSeconds)
 {
-	// Set up action bindings
-	if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent))
-	{
-		// Jumping
-		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &AHidePlayer::Jump);
-		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &AHidePlayer::StopJumping);
-
-		// Moving
-		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AHidePlayer::Move);
-
-		//// Looking
-		//EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AHidePlayer::Look);
-	}
-	else
-	{
-		UE_LOG(LogTemplateCharacter, Error, TEXT("'%s' Failed to find an Enhanced Input Component! This template is built to use the Enhanced Input system. If you intend to use the legacy system, then you will need to update this C++ file."), *GetNameSafe(this));
-	}
+	Super::Tick(DeltaSeconds);
 }
 
+void AHidePlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
+{
+	Super::SetupPlayerInputComponent(PlayerInputComponent);
+
+	auto InputSystem = CastChecked<UEnhancedInputComponent>(PlayerInputComponent);
+	if(InputSystem)
+	{
+		InputSystem->BindAction(IA_Move,ETriggerEvent::Triggered,this,&AHidePlayer::Move);
+		InputSystem->BindAction(IA_Look,ETriggerEvent::Triggered,this,&AHidePlayer::Look);
+
+	}
+}
 
 
 void AHidePlayer::Move(const FInputActionValue& Value)
 {
-	// input is a Vector2D
 	FVector2D MovementVector = Value.Get<FVector2D>();
 
-	if (Controller != nullptr)
-	{
-		// add movement 
-		AddMovementInput(GetActorForwardVector(), MovementVector.Y);
-		AddMovementInput(GetActorRightVector(), MovementVector.X);
-	}
+	AddMovementInput(GetActorForwardVector(),MovementVector.X);
+	AddMovementInput(GetActorRightVector(),MovementVector.Y);
+
 }
+
+void AHidePlayer::Look(const FInputActionValue& Value)
+{
+	FVector2D LookVector = Value.Get<FVector2D>();
+
+	AddControllerYawInput(LookVector.X);
+	AddControllerPitchInput(LookVector.Y);
+}
+
 
 
 
