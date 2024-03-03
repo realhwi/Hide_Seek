@@ -1,79 +1,338 @@
-癤�// Fill out your copyright notice in the Description page of Project Settings.
+// Fill out your copyright notice in the Description page of Project Settings.
 
 
 #include "HidePlayer.h"
-
 #include <EnhancedInputComponent.h>
 #include <EnhancedInputSubsystems.h>
 #include <InputActionValue.h>
+#include "Components/CapsuleComponent.h"
+#include "Camera/CameraComponent.h"
 #include "Engine/LocalPlayer.h"
+#include "MotionControllerComponent.h"
+#include "GameFramework/Actor.h"
+#include "HeadMountedDisplayFunctionLibrary.h"
+#include "Components/SphereComponent.h"
+#include "Interaction.h"
 
 
+// Sets default values
 AHidePlayer::AHidePlayer()
 {
+ 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
+	PrimaryActorTick.bCanEverTick = true;
+
+	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
+
+	//camera Comp
 	CameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("CameraComponent"));
 	CameraComponent->SetupAttachment(GetRootComponent());
 	CameraComponent->bUsePawnControlRotation = false;
-	CameraComponent->SetRelativeLocation(FVector(0,80,0));
+	CameraComponent->SetRelativeLocation(FVector(0, 0, 90));
+
+	//MotionController
+	LeftController = CreateDefaultSubobject<UMotionControllerComponent>(TEXT("Left Controller"));
+	LeftController->SetupAttachment(GetRootComponent());
+	LeftController->SetTrackingMotionSource(FName("Left"));
+
+	RightController = CreateDefaultSubobject<UMotionControllerComponent>(TEXT("Right Controller"));
+	RightController->SetupAttachment(GetRootComponent());
+	RightController->SetTrackingMotionSource(FName("Right"));
+
+	//Hand Mesh
+	LeftHandMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Left Hand Mesh"));
+	LeftHandMesh->SetupAttachment(LeftController);
+
+	RightHandMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Right Hand Mesh"));
+	RightHandMesh->SetupAttachment(RightController);
+
+	LeftControllerCollision = CreateDefaultSubobject<USphereComponent>(TEXT("LefrControllerCollision"));
+	LeftControllerCollision->SetupAttachment(LeftController);
+	RightControllerCollision = CreateDefaultSubobject<USphereComponent>(TEXT("RightControllerCollision"));
+	RightControllerCollision->SetupAttachment(RightController);
+
+
+	static ConstructorHelpers::FObjectFinder<UStaticMesh> LeftMeshFinder(TEXT("/Game/JH/Models/left_OculusTouch_v2Controller.left_OculusTouch_v2Controller"));
+	if (LeftMeshFinder.Succeeded())
+	{
+		LeftHandMesh->SetStaticMesh(LeftMeshFinder.Object);
+		LeftHandMesh->SetRelativeLocationAndRotation(FVector(0, 0, 0), FRotator(0, 0, 0));
+	}
+
+	// Find and attach the static mesh for RightHandMesh
+	static ConstructorHelpers::FObjectFinder<UStaticMesh> RightMeshFinder(TEXT("/Game/JH/Models/right_OculusTouch_v2Controller.right_OculusTouch_v2Controller"));
+	if (RightMeshFinder.Succeeded())
+	{
+		RightHandMesh->SetStaticMesh(RightMeshFinder.Object);
+		RightHandMesh->SetRelativeLocationAndRotation(FVector(0, 0, 0), FRotator(0, 0, 0));
+	}
+
+	/*ConstructorHelpers::FObjectFinder<UStaticMesh>TempMesh(TEXT("/Script/Engine.StaticMesh'/Game/JH/Models/left_OculusTouch_v2Controller.left_OculusTouch_v2Controller'"));
+	if (TempMesh.Succeeded())
+	{
+		LeftHandMesh->SetStaticMesh(TempMesh.Object);
+		LeftHandMesh->SetRelativeLocationAndRotation(FVector(-2.981260, -3.500000, 4.561753), FRotator(-25.000000, -179.999999, 89.999998));
+	}
+	ConstructorHelpers::FObjectFinder<UStaticMesh>TempMesh2(TEXT("/Script/Engine.StaticMesh'/Game/JH/Models/right_OculusTouch_v2Controller.right_OculusTouch_v2Controller'"));
+	if (TempMesh2.Succeeded())
+	{
+		RightHandMesh->SetStaticMesh(TempMesh2.Object);
+		RightHandMesh->SetRelativeLocationAndRotation(FVector(-2.981260, 3.500000, 4.561753), FRotator(25.000000, 0.000000, 89.999999));
+	}*/
 
 }
 
+// Called when the game starts or when spawned
 void AHidePlayer::BeginPlay()
 {
 	Super::BeginPlay();
 
-	APlayerController* Playercontroller =Cast<APlayerController>(GetWorld()->GetFirstPlayerController());
+	UHeadMountedDisplayFunctionLibrary::SetTrackingOrigin(EHMDTrackingOrigin::Eye);
+	APlayerController* Playercontroller = Cast<APlayerController>(GetWorld()->GetFirstPlayerController());
 
-	if(Playercontroller)
+	if (Playercontroller)
 	{
 		ULocalPlayer* LocalPlayer = Playercontroller->GetLocalPlayer();
-		if(LocalPlayer)
+		if (LocalPlayer)
 		{
-			UEnhancedInputLocalPlayerSubsystem* SubSystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>( LocalPlayer );
+			UEnhancedInputLocalPlayerSubsystem* SubSystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(LocalPlayer);
 			if (SubSystem)
 			{
-				SubSystem->AddMappingContext( IMC_VRInput , 0 );
+				SubSystem->AddMappingContext(IMC_JHVRInput, 0);
 			}
 		}
 	}
 }
 
-void AHidePlayer::Tick(float DeltaSeconds)
+// Called every frame
+void AHidePlayer::Tick(float DeltaTime)
 {
-	Super::Tick(DeltaSeconds);
+	Super::Tick(DeltaTime);
+
+	RightGrabbing();
+	//TriggerGragging();
 }
 
+// Called to bind functionality to input
 void AHidePlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
 	auto InputSystem = CastChecked<UEnhancedInputComponent>(PlayerInputComponent);
-	if(InputSystem)
+	if (InputSystem)
 	{
-		InputSystem->BindAction(IA_Move,ETriggerEvent::Triggered,this,&AHidePlayer::Move);
-		InputSystem->BindAction(IA_Look,ETriggerEvent::Triggered,this,&AHidePlayer::Look);
-
+		InputSystem->BindAction(IA_Move, ETriggerEvent::Triggered, this, &AHidePlayer::Move);
+		InputSystem->BindAction(IA_Look, ETriggerEvent::Triggered, this, &AHidePlayer::Look);
+		InputSystem->BindAction(IA_RightGrab, ETriggerEvent::Started, this, &AHidePlayer::OnActionTryRightGrab);
+		InputSystem->BindAction(IA_RightGrab, ETriggerEvent::Completed, this, &AHidePlayer::OnActionUnRightGrab);
+		InputSystem->BindAction(IA_Trigger, ETriggerEvent::Started, this, &AHidePlayer::OnActionTrigger);
+		InputSystem->BindAction(IA_Trigger, ETriggerEvent::Completed, this, &AHidePlayer::OnActionUnTrigger);
 	}
 }
 
+void AHidePlayer::OnConstruction(const FTransform& Transform)
+{
+	Super::OnConstruction(Transform);
+}
 
 void AHidePlayer::Move(const FInputActionValue& Value)
 {
 	FVector2D MovementVector = Value.Get<FVector2D>();
 
-	AddMovementInput(GetActorForwardVector(),MovementVector.X);
-	AddMovementInput(GetActorRightVector(),MovementVector.Y);
+	// VR 플랫폼에서는 카메라의 방향을 기준으로 이동하므로, 카메라의 방향을 가져오기
+	FVector ForwardVector = CameraComponent->GetForwardVector();
+	FVector RightVector = CameraComponent->GetRightVector();
 
+	// X 축은 카메라의 Forward 방향으로, Y 축은 카메라의 Right 방향으로 설정
+	FVector MovementDirection = ForwardVector * MovementVector.Y + RightVector * MovementVector.X;
+
+	// 이동 입력을 추가
+	AddMovementInput(MovementDirection, 25.0f); 
+
+	//PC 일때 사용
+	/*AddMovementInput( GetActorForwardVector() , MovementVector.X );
+	AddMovementInput( GetActorRightVector() , MovementVector.Y );*/
+
+	//VR 일때 카메라 기준으로 해야함
+	//예) GetComponentForward??
+	/*AddMovementInput(CameraComponent->GetForwardVector(), MovementVector.X);
+	AddMovementInput(CameraComponent->GetRightVector(), MovementVector.Y);*/
 }
 
 void AHidePlayer::Look(const FInputActionValue& Value)
 {
-	FVector2D LookVector = Value.Get<FVector2D>();
 
-	AddControllerYawInput(LookVector.X);
-	AddControllerPitchInput(LookVector.Y);
+	FVector2D LookAxisVector = Value.Get<FVector2D>();
+
+	if(Controller != nullptr)
+	{
+		/*CameraComponent->bUsePawnControlRotation = true;*/
+
+		AddControllerYawInput(LookAxisVector.X);
+		AddControllerPitchInput(-LookAxisVector.Y);
+	}
+
+	UE_LOG(LogTemp, Warning, TEXT("Thumbstick Look: %s"), *LookAxisVector.ToString());
+
 }
 
+void AHidePlayer::OnActionTryRightGrab()
+{
+	FVector OverlapSphereCenter=RightController->GetComponentLocation();
+
+	//Overlap Sphere와 겹친 물건을 저장할 Array
+	TArray<FOverlapResult> HitObjects;
+	FCollisionQueryParams CollisionParams;
+	//무시할 Actor들
+	CollisionParams.AddIgnoredActor(this);
+	CollisionParams.AddIgnoredComponent(RightController);
+	//Overlap 실행
+	bool bIsHit = GetWorld()->OverlapMultiByChannel(HitObjects, OverlapSphereCenter, FQuat::Identity, ECC_Visibility, FCollisionShape::MakeSphere(GrabRange));
+
+	//Grab bool 깃발 초기화	
+	bIsGrabbed = false;
+
+	//Overlap 결과가 없다면 밑에 코드 접근 불가
+	if (!bIsHit) { return; }
+
+	//가장 가까운 물건 Index
+	int ClosestObjectIndex = 0;			//Index 변수 선언
+	//가장 가까운 물건의 Index를 찾는 반복문
+	for (int i = 0; i < HitObjects.Num(); ++i) {
+		//Overlap와 겹친 물건이 Physics가 켜져이지 않다면 현재 Array Index 건너뛰기
+		if (!HitObjects[i].GetComponent()->IsSimulatingPhysics()) { continue; }
+
+		//Array에서 가장 가까운 물건 찾기 - HitObjects[ClosestObjectIndex]와 HitObjects[현재 Index] 비교함
+		//저장한 Index와 손의 거리
+
+		float DistBtwnHandClosest = FVector::Dist(OverlapSphereCenter, HitObjects[ClosestObjectIndex].GetComponent()->GetComponentLocation());
+		//현재 Index와 손의 거리
+		float DistBtwnHandCurrent = FVector::Dist(OverlapSphereCenter, HitObjects[i].GetComponent()->GetComponentLocation());
+
+		//현재 Index가 더 가깝다면
+		if (DistBtwnHandCurrent < DistBtwnHandClosest) {
+			//현재 Index 저장하기	
+			ClosestObjectIndex = i;
+		}
+
+		//Grab bool 깃발 올리기	
+		bIsGrabbed = true;
+	}
+
+	//만약에 물건을 잡았고 Grab bool 깃발이 올라갔으면
+	if (bIsGrabbed) {
+		//ClosestObjectIndex를 사용해서 Grab한 물건을 HitObjects Array에서 찾아서 저장하기
+		GrabbedObject = HitObjects[ClosestObjectIndex].GetComponent();
+		//Physics 비활성화
+		GrabbedObject->SetSimulatePhysics(false);
+		//Collision 비활성화
+		GrabbedObject->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		///RightHand에 붙이기
+		GrabbedObject->AttachToComponent(RightController, FAttachmentTransformRules::KeepWorldTransform);
+
+		//잡기 위치 저장
+		PreviousGrabRotation = RightController->GetComponentRotation().Quaternion();
+		//잡기 회전값 저장
+		PreviousGrabRotation = RightController->GetComponentQuat();
+	}
+}
+
+void AHidePlayer::OnActionUnRightGrab()
+{
+	//이미 Grab 깃발이 내려가있다면 밑에 코드 접근 불가
+	if (!bIsGrabbed) { return; }
+
+	//Grab bool 깃발 내리기
+	bIsGrabbed = false;
+	//손에서 Attach한 Actor때기
+	GrabbedObject->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
+	//Physics 활성화하기
+	GrabbedObject->SetSimulatePhysics(true);
+	//Collision 활성화하기
+	GrabbedObject->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+
+	//던지기
+	GrabbedObject->AddForce(ThrowDirection * ThrowStrength * GrabbedObject->GetMass());
+	//물건을 회전하기
+	float Angle;
+	FVector Axis;
+	//저장한 Quaternion인 Delta 회전값에서 Axis and Angle 추출하기
+	DeltaRotation.ToAxisAndAngle(Axis, Angle);
+
+	float DeltaTime = GetWorld()->DeltaTimeSeconds;
+	//회전속도 계산하기
+	FVector AngularVelocity = (1 / DeltaTime) * Angle * Axis;
+	//회전힘 적용하기
+	GrabbedObject->SetPhysicsAngularVelocityInRadians(AngularVelocity * TorquePower, true);
+
+	//Grab한 물건을 놓았기 때문에 변수에 nullptr 할당 	
+	GrabbedObject = nullptr;
+}
+
+void AHidePlayer::RightGrabbing()
+{
+	//Grab bool 깃발이 올라가지 않았다면 밑에 코드 접근 불가
+	if (!bIsGrabbed) { return; }
+
+	//던지기 방향 저장
+	ThrowDirection = RightController->GetComponentLocation() - PreviousGrabPosition;
+	
+	//잡기 위치 저장
+	PreviousGrabRotation = RightController->GetComponentRotation().Quaternion();
+
+	//Quaternion 공식
+	//angle1 = q1, angle2 = q2
+	//angle1 + angle2 = q1 + q2
+	//-angle1 = q1.inverse()
+	//angle2 - angle1 = q2 * q1.inverse()
+
+	//위에 공식 참고
+	//회전값 계산하기
+	DeltaRotation = RightController->GetComponentQuat() * PreviousGrabRotation.Inverse();
+	//회전값 저장하기
+	PreviousGrabRotation = RightController->GetComponentQuat();
+}
+
+void AHidePlayer::TriggerGragging()
+{
+	//if (!bIsTriggered) { return; }
+}
+
+void AHidePlayer::OnActionTrigger()
+{
+	//FVector Start = LeftController->GetComponentLocation(); // 또는 RightController, 상황에 따라 다름
+	//FVector ForwardVector = LeftController->GetForwardVector(); // 컨트롤러의 전방 벡터
+	//FVector End = Start + (ForwardVector * 1000); // 1000은 Line Trace의 길이
+	//FHitResult HitResult;
+
+	//bIsTriggered = true;
+	//// Line Trace 실행
+	//if (GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, ECC_Visibility))
+	//{
+	//	if (HitResult.GetActor() != nullptr)
+	//	{
+	//		// 여기서 HitResult를 사용하여 상호작용 로직 구현
+	//		ProcessInteraction(HitResult.GetActor());
+	//	}
+	//}
+}
+
+void AHidePlayer::OnActionUnTrigger()
+{
+	// bIsTriggered = false;
+}
+
+void AHidePlayer::ProcessInteraction(AActor* Actor)
+{
+	/*AInteraction* Interaction = Cast<AInteraction>(Actor);
+	if(Interaction)
+	{
+		Interaction->Interact();
+	}
+	else
+	{
+		
+	}*/
+}
 
 
 
