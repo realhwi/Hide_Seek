@@ -32,53 +32,41 @@ AHidePlayer::AHidePlayer()
 	//MotionController
 	LeftController = CreateDefaultSubobject<UMotionControllerComponent>(TEXT("Left Controller"));
 	LeftController->SetupAttachment(GetRootComponent());
-	LeftController->SetTrackingMotionSource(FName("Left"));
+	LeftController->SetTrackingSource( EControllerHand::Left);
+	// LeftController->SetTrackingMotionSource(FName("Left"));
 
 	RightController = CreateDefaultSubobject<UMotionControllerComponent>(TEXT("Right Controller"));
 	RightController->SetupAttachment(GetRootComponent());
-	RightController->SetTrackingMotionSource(FName("Right"));
+	RightController->SetTrackingSource( EControllerHand::Right );
+	// RightController->SetTrackingMotionSource(FName("Right"));
+
+	//Hand Collision 
+	/*LeftControllerCollision = CreateDefaultSubobject<USphereComponent>( TEXT( "LefrControllerCollision" ) );
+	LeftControllerCollision->SetupAttachment( LeftController );
+	RightControllerCollision = CreateDefaultSubobject<USphereComponent>( TEXT( "RightControllerCollision" ) );
+	RightControllerCollision->SetupAttachment( RightController );*/
 
 	//Hand Mesh
 	LeftHandMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Left Hand Mesh"));
-	LeftHandMesh->SetupAttachment(LeftController);
+	LeftHandMesh->AttachToComponent( GetMesh() , FAttachmentTransformRules::SnapToTargetIncludingScale , TEXT( "hand_lPoint" ) );
+	// LeftHandMesh->SetupAttachment(LeftController);
 
 	RightHandMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Right Hand Mesh"));
-	RightHandMesh->SetupAttachment(RightController);
-
-	LeftControllerCollision = CreateDefaultSubobject<USphereComponent>(TEXT("LefrControllerCollision"));
-	LeftControllerCollision->SetupAttachment(LeftController);
-	RightControllerCollision = CreateDefaultSubobject<USphereComponent>(TEXT("RightControllerCollision"));
-	RightControllerCollision->SetupAttachment(RightController);
-
+	RightHandMesh->AttachToComponent( GetMesh() , FAttachmentTransformRules::SnapToTargetIncludingScale , TEXT( "hand_rPoint" ) );
+	// RightHandMesh->SetupAttachment(RightController);
 
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> LeftMeshFinder(TEXT("/Script/Engine.StaticMesh'/Game/JH/Models/left_OculusTouch_v2Controller.left_OculusTouch_v2Controller'"));
 	if (LeftMeshFinder.Succeeded())
 	{
 		LeftHandMesh->SetStaticMesh(LeftMeshFinder.Object);
-		LeftHandMesh->SetRelativeLocationAndRotation(FVector(0, 0, 0), FRotator(0, 0, 0));
 	}
-	//
+	
 	// Find and attach the static mesh for RightHandMesh
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> RightMeshFinder(TEXT("/Script/Engine.StaticMesh'/Game/JH/Models/right_OculusTouch_v2Controller.right_OculusTouch_v2Controller'"));
 	if (RightMeshFinder.Succeeded())
 	{
 		RightHandMesh->SetStaticMesh(RightMeshFinder.Object);
-		RightHandMesh->SetRelativeLocationAndRotation(FVector(0, 0, 0), FRotator(0, 0, 0));
 	}
-
-	/*ConstructorHelpers::FObjectFinder<UStaticMesh>TempMesh(TEXT("/Script/Engine.StaticMesh'/Game/JH/Models/left_OculusTouch_v2Controller.left_OculusTouch_v2Controller'"));
-	if (TempMesh.Succeeded())
-	{
-		LeftHandMesh->SetStaticMesh(TempMesh.Object);
-		LeftHandMesh->SetRelativeLocationAndRotation(FVector(-2.981260, -3.500000, 4.561753), FRotator(-25.000000, -179.999999, 89.999998));
-	}
-	ConstructorHelpers::FObjectFinder<UStaticMesh>TempMesh2(TEXT("/Script/Engine.StaticMesh'/Game/JH/Models/right_OculusTouch_v2Controller.right_OculusTouch_v2Controller'"));
-	if (TempMesh2.Succeeded())
-	{
-		RightHandMesh->SetStaticMesh(TempMesh2.Object);
-		RightHandMesh->SetRelativeLocationAndRotation(FVector(-2.981260, 3.500000, 4.561753), FRotator(25.000000, 0.000000, 89.999999));
-	}*/
-
 }
 
 // Called when the game starts or when spawned

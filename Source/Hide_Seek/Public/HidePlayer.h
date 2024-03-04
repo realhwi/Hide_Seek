@@ -59,10 +59,10 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Settings | Player")
 	class UStaticMeshComponent* RightHandMesh;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
-	class USphereComponent* LeftControllerCollision;
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
-	class USphereComponent* RightControllerCollision;
+	//UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	//class USphereComponent* LeftControllerCollision;
+	//UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	//class USphereComponent* RightControllerCollision;
 
 private:
 	UFUNCTION()
