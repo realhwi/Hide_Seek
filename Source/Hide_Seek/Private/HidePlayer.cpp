@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+ï»¿// Fill out your copyright notice in the Description page of Project Settings.
 
 
 #include "HidePlayer.h"
@@ -51,15 +51,15 @@ AHidePlayer::AHidePlayer()
 	RightControllerCollision->SetupAttachment(RightController);
 
 
-	static ConstructorHelpers::FObjectFinder<UStaticMesh> LeftMeshFinder(TEXT("/Game/JH/Models/left_OculusTouch_v2Controller.left_OculusTouch_v2Controller"));
+	static ConstructorHelpers::FObjectFinder<UStaticMesh> LeftMeshFinder(TEXT("/Script/Engine.StaticMesh'/Game/JH/Models/left_OculusTouch_v2Controller.left_OculusTouch_v2Controller'"));
 	if (LeftMeshFinder.Succeeded())
 	{
 		LeftHandMesh->SetStaticMesh(LeftMeshFinder.Object);
 		LeftHandMesh->SetRelativeLocationAndRotation(FVector(0, 0, 0), FRotator(0, 0, 0));
 	}
-
+	//
 	// Find and attach the static mesh for RightHandMesh
-	static ConstructorHelpers::FObjectFinder<UStaticMesh> RightMeshFinder(TEXT("/Game/JH/Models/right_OculusTouch_v2Controller.right_OculusTouch_v2Controller"));
+	static ConstructorHelpers::FObjectFinder<UStaticMesh> RightMeshFinder(TEXT("/Script/Engine.StaticMesh'/Game/JH/Models/right_OculusTouch_v2Controller.right_OculusTouch_v2Controller'"));
 	if (RightMeshFinder.Succeeded())
 	{
 		RightHandMesh->SetStaticMesh(RightMeshFinder.Object);
@@ -109,7 +109,7 @@ void AHidePlayer::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 	RightGrabbing();
-	//TriggerGragging();
+	// TriggerGragging();
 }
 
 // Called to bind functionality to input
@@ -122,10 +122,10 @@ void AHidePlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 	{
 		InputSystem->BindAction(IA_Move, ETriggerEvent::Triggered, this, &AHidePlayer::Move);
 		InputSystem->BindAction(IA_Look, ETriggerEvent::Triggered, this, &AHidePlayer::Look);
-		InputSystem->BindAction(IA_RightGrab, ETriggerEvent::Started, this, &AHidePlayer::OnActionTryRightGrab);
-		InputSystem->BindAction(IA_RightGrab, ETriggerEvent::Completed, this, &AHidePlayer::OnActionUnRightGrab);
-		InputSystem->BindAction(IA_Trigger, ETriggerEvent::Started, this, &AHidePlayer::OnActionTrigger);
-		InputSystem->BindAction(IA_Trigger, ETriggerEvent::Completed, this, &AHidePlayer::OnActionUnTrigger);
+		InputSystem->BindAction(IA_Grab, ETriggerEvent::Started, this, &AHidePlayer::OnActionTryGrab );
+		InputSystem->BindAction(IA_Grab, ETriggerEvent::Completed, this, &AHidePlayer::OnActionUnGrab );
+		/*InputSystem->BindAction(IA_Trigger, ETriggerEvent::Started, this, &AHidePlayer::OnActionTrigger);
+		InputSystem->BindAction(IA_Trigger, ETriggerEvent::Completed, this, &AHidePlayer::OnActionUnTrigger);*/
 	}
 }
 
@@ -136,24 +136,26 @@ void AHidePlayer::OnConstruction(const FTransform& Transform)
 
 void AHidePlayer::Move(const FInputActionValue& Value)
 {
+	UE_LOG( LogTemp , Warning , TEXT( "Try" ) );
+
 	FVector2D MovementVector = Value.Get<FVector2D>();
 
-	// VR ÇÃ·§Æû¿¡¼­´Â Ä«¸Ş¶óÀÇ ¹æÇâÀ» ±âÁØÀ¸·Î ÀÌµ¿ÇÏ¹Ç·Î, Ä«¸Ş¶óÀÇ ¹æÇâÀ» °¡Á®¿À±â
+	// VR í”Œë«í¼ì—ì„œëŠ” ì¹´ë©”ë¼ì˜ ë°©í–¥ì„ ê¸°ì¤€ìœ¼ë¡œ ì´ë™í•˜ë¯€ë¡œ, ì¹´ë©”ë¼ì˜ ë°©í–¥ì„ ê°€ì ¸ì˜¤ê¸°
 	FVector ForwardVector = CameraComponent->GetForwardVector();
 	FVector RightVector = CameraComponent->GetRightVector();
 
-	// X ÃàÀº Ä«¸Ş¶óÀÇ Forward ¹æÇâÀ¸·Î, Y ÃàÀº Ä«¸Ş¶óÀÇ Right ¹æÇâÀ¸·Î ¼³Á¤
+	// X ì¶•ì€ ì¹´ë©”ë¼ì˜ Forward ë°©í–¥ìœ¼ë¡œ, Y ì¶•ì€ ì¹´ë©”ë¼ì˜ Right ë°©í–¥ìœ¼ë¡œ ì„¤ì •
 	FVector MovementDirection = ForwardVector * MovementVector.Y + RightVector * MovementVector.X;
 
-	// ÀÌµ¿ ÀÔ·ÂÀ» Ãß°¡
+	// ì´ë™ ì…ë ¥ì„ ì¶”ê°€
 	AddMovementInput(MovementDirection, 25.0f); 
 
-	//PC ÀÏ¶§ »ç¿ë
+	//PC ì¼ë•Œ ì‚¬ìš©
 	/*AddMovementInput( GetActorForwardVector() , MovementVector.X );
 	AddMovementInput( GetActorRightVector() , MovementVector.Y );*/
 
-	//VR ÀÏ¶§ Ä«¸Ş¶ó ±âÁØÀ¸·Î ÇØ¾ßÇÔ
-	//¿¹) GetComponentForward??
+	//VR ì¼ë•Œ ì¹´ë©”ë¼ ê¸°ì¤€ìœ¼ë¡œ í•´ì•¼í•¨
+	//ì˜ˆ) GetComponentForward??
 	/*AddMovementInput(CameraComponent->GetForwardVector(), MovementVector.X);
 	AddMovementInput(CameraComponent->GetRightVector(), MovementVector.Y);*/
 }
@@ -175,165 +177,166 @@ void AHidePlayer::Look(const FInputActionValue& Value)
 
 }
 
-void AHidePlayer::OnActionTryRightGrab()
+void AHidePlayer::OnActionTryGrab()
 {
-	FVector OverlapSphereCenter=RightController->GetComponentLocation();
+	UE_LOG( LogTemp , Warning , TEXT( "Try" ));
+	FVector OverlapSphereCenter = RightController->GetComponentLocation();
 
-	//Overlap Sphere¿Í °ãÄ£ ¹°°ÇÀ» ÀúÀåÇÒ Array
+	//Overlap Sphereì™€ ê²¹ì¹œ ë¬¼ê±´ì„ ì €ì¥í•  Array
 	TArray<FOverlapResult> HitObjects;
 	FCollisionQueryParams CollisionParams;
-	//¹«½ÃÇÒ Actorµé
-	CollisionParams.AddIgnoredActor(this);
-	CollisionParams.AddIgnoredComponent(RightController);
-	//Overlap ½ÇÇà
-	bool bIsHit = GetWorld()->OverlapMultiByChannel(HitObjects, OverlapSphereCenter, FQuat::Identity, ECC_Visibility, FCollisionShape::MakeSphere(GrabRange));
+	//ë¬´ì‹œí•  Actorë“¤
+	CollisionParams.AddIgnoredActor( this );
+	CollisionParams.AddIgnoredComponent( RightController );
+	//Overlap ì‹¤í–‰
+	bool bIsHit = GetWorld()->OverlapMultiByChannel( HitObjects , OverlapSphereCenter , FQuat::Identity , ECC_Visibility , FCollisionShape::MakeSphere( GrabRange ) );
 
-	//Grab bool ±ê¹ß ÃÊ±âÈ­	
+	//Grab bool ê¹ƒë°œ ì´ˆê¸°í™”	
 	bIsGrabbed = false;
 
-	//Overlap °á°ú°¡ ¾ø´Ù¸é ¹Ø¿¡ ÄÚµå Á¢±Ù ºÒ°¡
+	//Overlap ê²°ê³¼ê°€ ì—†ë‹¤ë©´ ë°‘ì— ì½”ë“œ ì ‘ê·¼ ë¶ˆê°€
 	if (!bIsHit) { return; }
 
-	//°¡Àå °¡±î¿î ¹°°Ç Index
-	int ClosestObjectIndex = 0;			//Index º¯¼ö ¼±¾ğ
-	//°¡Àå °¡±î¿î ¹°°ÇÀÇ Index¸¦ Ã£´Â ¹İº¹¹®
+	//ê°€ì¥ ê°€ê¹Œìš´ ë¬¼ê±´ Index
+	int ClosestObjectIndex = 0;			//Index ë³€ìˆ˜ ì„ ì–¸
+	//ê°€ì¥ ê°€ê¹Œìš´ ë¬¼ê±´ì˜ Indexë¥¼ ì°¾ëŠ” ë°˜ë³µë¬¸
 	for (int i = 0; i < HitObjects.Num(); ++i) {
-		//Overlap¿Í °ãÄ£ ¹°°ÇÀÌ Physics°¡ ÄÑÁ®ÀÌÁö ¾Ê´Ù¸é ÇöÀç Array Index °Ç³Ê¶Ù±â
+		//Overlapì™€ ê²¹ì¹œ ë¬¼ê±´ì´ Physicsê°€ ì¼œì ¸ì´ì§€ ì•Šë‹¤ë©´ í˜„ì¬ Array Index ê±´ë„ˆë›°ê¸°
 		if (!HitObjects[i].GetComponent()->IsSimulatingPhysics()) { continue; }
 
-		//Array¿¡¼­ °¡Àå °¡±î¿î ¹°°Ç Ã£±â - HitObjects[ClosestObjectIndex]¿Í HitObjects[ÇöÀç Index] ºñ±³ÇÔ
-		//ÀúÀåÇÑ Index¿Í ¼ÕÀÇ °Å¸®
+		//Arrayì—ì„œ ê°€ì¥ ê°€ê¹Œìš´ ë¬¼ê±´ ì°¾ê¸° - HitObjects[ClosestObjectIndex]ì™€ HitObjects[í˜„ì¬ Index] ë¹„êµí•¨
+		//ì €ì¥í•œ Indexì™€ ì†ì˜ ê±°ë¦¬
 
-		float DistBtwnHandClosest = FVector::Dist(OverlapSphereCenter, HitObjects[ClosestObjectIndex].GetComponent()->GetComponentLocation());
-		//ÇöÀç Index¿Í ¼ÕÀÇ °Å¸®
-		float DistBtwnHandCurrent = FVector::Dist(OverlapSphereCenter, HitObjects[i].GetComponent()->GetComponentLocation());
+		float DistBtwnHandClosest = FVector::Dist( OverlapSphereCenter , HitObjects[ClosestObjectIndex].GetComponent()->GetComponentLocation() );
+		//í˜„ì¬ Indexì™€ ì†ì˜ ê±°ë¦¬
+		float DistBtwnHandCurrent = FVector::Dist( OverlapSphereCenter , HitObjects[i].GetComponent()->GetComponentLocation() );
 
-		//ÇöÀç Index°¡ ´õ °¡±õ´Ù¸é
+		//í˜„ì¬ Indexê°€ ë” ê°€ê¹ë‹¤ë©´
 		if (DistBtwnHandCurrent < DistBtwnHandClosest) {
-			//ÇöÀç Index ÀúÀåÇÏ±â	
+			//í˜„ì¬ Index ì €ì¥í•˜ê¸°	
 			ClosestObjectIndex = i;
 		}
 
-		//Grab bool ±ê¹ß ¿Ã¸®±â	
+		//Grab bool ê¹ƒë°œ ì˜¬ë¦¬ê¸°	
 		bIsGrabbed = true;
 	}
 
-	//¸¸¾à¿¡ ¹°°ÇÀ» Àâ¾Ò°í Grab bool ±ê¹ßÀÌ ¿Ã¶ó°¬À¸¸é
+	//ë§Œì•½ì— ë¬¼ê±´ì„ ì¡ì•˜ê³  Grab bool ê¹ƒë°œì´ ì˜¬ë¼ê°”ìœ¼ë©´
 	if (bIsGrabbed) {
-		//ClosestObjectIndex¸¦ »ç¿ëÇØ¼­ GrabÇÑ ¹°°ÇÀ» HitObjects Array¿¡¼­ Ã£¾Æ¼­ ÀúÀåÇÏ±â
+		//ClosestObjectIndexë¥¼ ì‚¬ìš©í•´ì„œ Grabí•œ ë¬¼ê±´ì„ HitObjects Arrayì—ì„œ ì°¾ì•„ì„œ ì €ì¥í•˜ê¸°
 		GrabbedObject = HitObjects[ClosestObjectIndex].GetComponent();
-		//Physics ºñÈ°¼ºÈ­
-		GrabbedObject->SetSimulatePhysics(false);
-		//Collision ºñÈ°¼ºÈ­
-		GrabbedObject->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-		///RightHand¿¡ ºÙÀÌ±â
-		GrabbedObject->AttachToComponent(RightController, FAttachmentTransformRules::KeepWorldTransform);
+		//Physics ë¹„í™œì„±í™”
+		GrabbedObject->SetSimulatePhysics( false );
+		//Collision ë¹„í™œì„±í™”
+		GrabbedObject->SetCollisionEnabled( ECollisionEnabled::NoCollision );
+		///RightHandì— ë¶™ì´ê¸°
+		GrabbedObject->AttachToComponent( RightController , FAttachmentTransformRules::KeepWorldTransform );
 
-		//Àâ±â À§Ä¡ ÀúÀå
+		//ì¡ê¸° ìœ„ì¹˜ ì €ì¥
 		PreviousGrabRotation = RightController->GetComponentRotation().Quaternion();
-		//Àâ±â È¸Àü°ª ÀúÀå
+		//ì¡ê¸° íšŒì „ê°’ ì €ì¥
 		PreviousGrabRotation = RightController->GetComponentQuat();
 	}
 }
 
-void AHidePlayer::OnActionUnRightGrab()
+void AHidePlayer::OnActionUnGrab()
 {
-	//ÀÌ¹Ì Grab ±ê¹ßÀÌ ³»·Á°¡ÀÖ´Ù¸é ¹Ø¿¡ ÄÚµå Á¢±Ù ºÒ°¡
+	//ì´ë¯¸ Grab ê¹ƒë°œì´ ë‚´ë ¤ê°€ìˆë‹¤ë©´ ë°‘ì— ì½”ë“œ ì ‘ê·¼ ë¶ˆê°€
 	if (!bIsGrabbed) { return; }
 
-	//Grab bool ±ê¹ß ³»¸®±â
+	//Grab bool ê¹ƒë°œ ë‚´ë¦¬ê¸°
 	bIsGrabbed = false;
-	//¼Õ¿¡¼­ AttachÇÑ Actor¶§±â
-	GrabbedObject->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
-	//Physics È°¼ºÈ­ÇÏ±â
-	GrabbedObject->SetSimulatePhysics(true);
-	//Collision È°¼ºÈ­ÇÏ±â
-	GrabbedObject->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	//ì†ì—ì„œ Attachí•œ Actorë•Œê¸°
+	GrabbedObject->DetachFromComponent( FDetachmentTransformRules::KeepWorldTransform );
+	//Physics í™œì„±í™”í•˜ê¸°
+	GrabbedObject->SetSimulatePhysics( true );
+	//Collision í™œì„±í™”í•˜ê¸°
+	GrabbedObject->SetCollisionEnabled( ECollisionEnabled::QueryAndPhysics );
 
-	//´øÁö±â
-	GrabbedObject->AddForce(ThrowDirection * ThrowStrength * GrabbedObject->GetMass());
-	//¹°°ÇÀ» È¸ÀüÇÏ±â
+	//ë˜ì§€ê¸°
+	GrabbedObject->AddForce( ThrowDirection * ThrowStrength * GrabbedObject->GetMass() );
+	//ë¬¼ê±´ì„ íšŒì „í•˜ê¸°
 	float Angle;
 	FVector Axis;
-	//ÀúÀåÇÑ QuaternionÀÎ Delta È¸Àü°ª¿¡¼­ Axis and Angle ÃßÃâÇÏ±â
-	DeltaRotation.ToAxisAndAngle(Axis, Angle);
+	//ì €ì¥í•œ Quaternionì¸ Delta íšŒì „ê°’ì—ì„œ Axis and Angle ì¶”ì¶œí•˜ê¸°
+	DeltaRotation.ToAxisAndAngle( Axis , Angle );
 
 	float DeltaTime = GetWorld()->DeltaTimeSeconds;
-	//È¸Àü¼Óµµ °è»êÇÏ±â
+	//íšŒì „ì†ë„ ê³„ì‚°í•˜ê¸°
 	FVector AngularVelocity = (1 / DeltaTime) * Angle * Axis;
-	//È¸ÀüÈû Àû¿ëÇÏ±â
-	GrabbedObject->SetPhysicsAngularVelocityInRadians(AngularVelocity * TorquePower, true);
+	//íšŒì „í˜ ì ìš©í•˜ê¸°
+	GrabbedObject->SetPhysicsAngularVelocityInRadians( AngularVelocity * TorquePower , true );
 
-	//GrabÇÑ ¹°°ÇÀ» ³õ¾Ò±â ¶§¹®¿¡ º¯¼ö¿¡ nullptr ÇÒ´ç 	
+	//Grabí•œ ë¬¼ê±´ì„ ë†“ì•˜ê¸° ë•Œë¬¸ì— ë³€ìˆ˜ì— nullptr í• ë‹¹ 	
 	GrabbedObject = nullptr;
 }
 
 void AHidePlayer::RightGrabbing()
 {
-	//Grab bool ±ê¹ßÀÌ ¿Ã¶ó°¡Áö ¾Ê¾Ò´Ù¸é ¹Ø¿¡ ÄÚµå Á¢±Ù ºÒ°¡
+	//Grab bool ê¹ƒë°œì´ ì˜¬ë¼ê°€ì§€ ì•Šì•˜ë‹¤ë©´ ë°‘ì— ì½”ë“œ ì ‘ê·¼ ë¶ˆê°€
 	if (!bIsGrabbed) { return; }
 
-	//´øÁö±â ¹æÇâ ÀúÀå
+	//ë˜ì§€ê¸° ë°©í–¥ ì €ì¥
 	ThrowDirection = RightController->GetComponentLocation() - PreviousGrabPosition;
-	
-	//Àâ±â À§Ä¡ ÀúÀå
+
+	//ì¡ê¸° ìœ„ì¹˜ ì €ì¥
 	PreviousGrabRotation = RightController->GetComponentRotation().Quaternion();
 
-	//Quaternion °ø½Ä
+	//Quaternion ê³µì‹
 	//angle1 = q1, angle2 = q2
 	//angle1 + angle2 = q1 + q2
 	//-angle1 = q1.inverse()
 	//angle2 - angle1 = q2 * q1.inverse()
 
-	//À§¿¡ °ø½Ä Âü°í
-	//È¸Àü°ª °è»êÇÏ±â
+	//ìœ„ì— ê³µì‹ ì°¸ê³ 
+	//íšŒì „ê°’ ê³„ì‚°í•˜ê¸°
 	DeltaRotation = RightController->GetComponentQuat() * PreviousGrabRotation.Inverse();
-	//È¸Àü°ª ÀúÀåÇÏ±â
+	//íšŒì „ê°’ ì €ì¥í•˜ê¸°
 	PreviousGrabRotation = RightController->GetComponentQuat();
 }
 
-void AHidePlayer::TriggerGragging()
-{
-	//if (!bIsTriggered) { return; }
-}
-
-void AHidePlayer::OnActionTrigger()
-{
-	//FVector Start = LeftController->GetComponentLocation(); // ¶Ç´Â RightController, »óÈ²¿¡ µû¶ó ´Ù¸§
-	//FVector ForwardVector = LeftController->GetForwardVector(); // ÄÁÆ®·Ñ·¯ÀÇ Àü¹æ º¤ÅÍ
-	//FVector End = Start + (ForwardVector * 1000); // 1000Àº Line TraceÀÇ ±æÀÌ
-	//FHitResult HitResult;
-
-	//bIsTriggered = true;
-	//// Line Trace ½ÇÇà
-	//if (GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, ECC_Visibility))
-	//{
-	//	if (HitResult.GetActor() != nullptr)
-	//	{
-	//		// ¿©±â¼­ HitResult¸¦ »ç¿ëÇÏ¿© »óÈ£ÀÛ¿ë ·ÎÁ÷ ±¸Çö
-	//		ProcessInteraction(HitResult.GetActor());
-	//	}
-	//}
-}
-
-void AHidePlayer::OnActionUnTrigger()
-{
-	// bIsTriggered = false;
-}
-
-void AHidePlayer::ProcessInteraction(AActor* Actor)
-{
-	/*AInteraction* Interaction = Cast<AInteraction>(Actor);
-	if(Interaction)
-	{
-		Interaction->Interact();
-	}
-	else
-	{
-		
-	}*/
-}
-
-
+//void AHidePlayer::TriggerGragging()
+//{
+//	if (!bIsTriggered) { return; }
+//}
+//
+//void AHidePlayer::OnActionTrigger()
+//{
+//	FVector Start = LeftController->GetComponentLocation(); // ë˜ëŠ” RightController, ìƒí™©ì— ë”°ë¼ ë‹¤ë¦„
+//	FVector ForwardVector = LeftController->GetForwardVector(); // ì»¨íŠ¸ë¡¤ëŸ¬ì˜ ì „ë°© ë²¡í„°
+//	FVector End = Start + (ForwardVector * 1000); // 1000ì€ Line Traceì˜ ê¸¸ì´
+//	FHitResult HitResult;
+//
+//	bIsTriggered = true;
+//	// Line Trace ì‹¤í–‰
+//	if (GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, ECC_Visibility))
+//	{
+//		if (HitResult.GetActor() != nullptr)
+//		{
+//			// ì—¬ê¸°ì„œ HitResultë¥¼ ì‚¬ìš©í•˜ì—¬ ìƒí˜¸ì‘ìš© ë¡œì§ êµ¬í˜„
+//			ProcessInteraction(HitResult.GetActor());
+//		}
+//	}
+//}
+//
+//void AHidePlayer::OnActionUnTrigger()
+//{
+//	 bIsTriggered = false;
+//}
+//
+//void AHidePlayer::ProcessInteraction(AActor* Actor)
+//{
+//	AInteraction* Interaction = Cast<AInteraction>(Actor);
+//	if(Interaction)
+//	{
+//		Interaction->Interact();
+//	}
+//	else
+//	{
+//		
+//	}
+//}
+//
+//
 
 

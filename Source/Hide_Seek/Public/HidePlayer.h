@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+ï»¿// Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
 
@@ -41,9 +41,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* IA_Look;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	class UInputAction* IA_RightGrab;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	class UInputAction* IA_Trigger;
+	class UInputAction* IA_Grab;
+	/*UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class UInputAction* IA_Trigger;*/
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Settings | Player")
 	class UCameraComponent* CameraComponent;
@@ -56,7 +56,6 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Settings | Player")
 	class UStaticMeshComponent* LeftHandMesh;
-
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Settings | Player")
 	class UStaticMeshComponent* RightHandMesh;
 
@@ -74,60 +73,60 @@ private:
 
 public:
 
-	//Grab Overlap ÇÒ¶§ »ç¿ëÇÏ´Â Grab ¹üÀ§ ¶Ç´Â Overlap Sphere Å©±â
+	//Grab Overlap í• ë•Œ ì‚¬ìš©í•˜ëŠ” Grab ë²”ìœ„ ë˜ëŠ” Overlap Sphere í¬ê¸°
 	UPROPERTY(EditAnywhere, Category = "Grab", meta = (AllowPrivateAccess = true))
 	float GrabRange = 100;
 
-	//Grab Input ¹öÆ° ´©¸¦¶§ ½ÇÇàµÊ
+	//Grab Input ë²„íŠ¼ ëˆ„ë¥¼ë•Œ ì‹¤í–‰ë¨
 	UFUNCTION()
-	void OnActionTryRightGrab();
+	void OnActionTryGrab();
 
-	//Grab Input ¹öÆ° ¶ª¶§ ½ÇÇàµÊ 
+	//Grab Input ë²„íŠ¼ ë•”ë•Œ ì‹¤í–‰ë¨ 
 	UFUNCTION()
-	void OnActionUnRightGrab();
+	void OnActionUnGrab();
 
-	//Tick¿¡¼­ ½ÇÇàµÊ
-	//¸¸¾à¿¡ bIsGrabbedÀÌ True¸é ÇÁ·¹ÀÓ¸¶´Ù È£ÃâµÊ
+	//Tickì—ì„œ ì‹¤í–‰ë¨
+	//ë§Œì•½ì— bIsGrabbedì´ Trueë©´ í”„ë ˆì„ë§ˆë‹¤ í˜¸ì¶œë¨
 	void RightGrabbing();
 
-	//Input ¹öÆ°ÀÌ ´­·¶´ÂÁö/¶®´ÂÁö ¾Ë·ÁÁÖ´Â bool º¯¼ö
-	//ÀÌ°É·Î ´©¸§/¶« »óÅÂ¸¦ Á¦¾îÇÒ ¼ö ÀÖÀ½
+	//Input ë²„íŠ¼ì´ ëˆŒë €ëŠ”ì§€/ë• ëŠ”ì§€ ì•Œë ¤ì£¼ëŠ” bool ë³€ìˆ˜
+	//ì´ê±¸ë¡œ ëˆ„ë¦„/ë•œ ìƒíƒœë¥¼ ì œì–´í•  ìˆ˜ ìˆìŒ
 	bool bIsGrabbed;
 
-	// bIsTriggered°¡ TrueÀÌ¸é ÇÁ·¹ÀÓ¸¶´Ù È£ÃâµÊ 
-	void TriggerGragging();
-	bool bIsTriggered;
+	// bIsTriggeredê°€ Trueì´ë©´ í”„ë ˆì„ë§ˆë‹¤ í˜¸ì¶œë¨ 
+	/*void TriggerGragging();
+	bool bIsTriggered;*/
 
-	//Trigger Input ¹öÆ° ´©¸¦¶§ ½ÇÇàµÊ
-	UFUNCTION()
-	void OnActionTrigger();
+	////Trigger Input ë²„íŠ¼ ëˆ„ë¥¼ë•Œ ì‹¤í–‰ë¨
+	//UFUNCTION()
+	//void OnActionTrigger();
 
-	//Trigger Input ¹öÆ° ¶ª¶§ ½ÇÇàµÊ 
-	UFUNCTION()
-	void OnActionUnTrigger();
+	////Trigger Input ë²„íŠ¼ ë•”ë•Œ ì‹¤í–‰ë¨ 
+	//UFUNCTION()
+	//void OnActionUnTrigger();
 
-	// »óÈ£ÀÛ¿ë ÀÎÅÍÆäÀÌ½º
+	// ìƒí˜¸ì‘ìš© ì¸í„°í˜ì´ìŠ¤
 	void ProcessInteraction(AActor* Actor);
 
-	//GrabµÈ ¹°°ÇÀÇ Component
+	//Grabëœ ë¬¼ê±´ì˜ Component
 	UPROPERTY()
 	class UPrimitiveComponent* GrabbedObject;
 
-	//´øÁö´Â ¹æÇâ
+	//ë˜ì§€ëŠ” ë°©í–¥
 	FVector ThrowDirection;
 
-	//´øÁú¶§ Èû
+	//ë˜ì§ˆë•Œ í˜
 	UPROPERTY(EditAnywhere, Category = "Grab", meta = (AllowPrivateAccess = true))
 	float ThrowStrength = 10000;
 
-	//GrabÀ§Ä¡¸¦ ½Ç½Ã°£À¸·Î ¾÷µ¥ÀÌÆ® ÇØ¾ßÇÏ±â ¶§¹®¿¡ ¿©±â´Ù°¡ ÀúÀåÇÔ
+	//Grabìœ„ì¹˜ë¥¼ ì‹¤ì‹œê°„ìœ¼ë¡œ ì—…ë°ì´íŠ¸ í•´ì•¼í•˜ê¸° ë•Œë¬¸ì— ì—¬ê¸°ë‹¤ê°€ ì €ì¥í•¨
 	FVector PreviousGrabPosition;
-	//½Ç½Ã°£À¸·Î ÀúÀåÇÒ È¸Àü°ª
+	//ì‹¤ì‹œê°„ìœ¼ë¡œ ì €ì¥í•  íšŒì „ê°’
 	FQuat PreviousGrabRotation;
-	//È¸Àü º¯È­·®
+	//íšŒì „ ë³€í™”ëŸ‰
 	FQuat DeltaRotation;
 
-	//È¸Àü Èû
+	//íšŒì „ í˜
 	UPROPERTY(EditAnywhere, Category = "Grab", meta = (AllowPrivateAccess = true))
 	float TorquePower = 1;
 
