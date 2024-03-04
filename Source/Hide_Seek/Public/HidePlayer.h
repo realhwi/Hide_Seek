@@ -42,8 +42,8 @@ public:
 	class UInputAction* IA_Look;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* IA_Grab;
-	/*UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	class UInputAction* IA_Trigger;*/
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class UInputAction* IA_Trigger;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Settings | Player")
 	class UCameraComponent* CameraComponent;
@@ -59,10 +59,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Settings | Player")
 	class UStaticMeshComponent* RightHandMesh;
 
-	//UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
-	//class USphereComponent* LeftControllerCollision;
-	//UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
-	//class USphereComponent* RightControllerCollision;
 
 private:
 	UFUNCTION()
@@ -88,25 +84,27 @@ public:
 	//Tick에서 실행됨
 	//만약에 bIsGrabbed이 True면 프레임마다 호출됨
 	void RightGrabbing();
-
-	//Input 버튼이 눌렀는지/땠는지 알려주는 bool 변수
 	//이걸로 누름/땜 상태를 제어할 수 있음
 	bool bIsGrabbed;
 
-	// bIsTriggered가 True이면 프레임마다 호출됨 
-	/*void TriggerGragging();
-	bool bIsTriggered;*/
+	//Trigger Input 버튼 누를때 실행됨
+	UFUNCTION()
+	void OnActionTrigger();
+	// bIsTriggered가 True이면 프레임마다 호출됨
+	bool bIsTrigger;
 
-	////Trigger Input 버튼 누를때 실행됨
-	//UFUNCTION()
-	//void OnActionTrigger();
+	//Trigger Input 버튼 땔때 실행됨 
+	UFUNCTION()
+	void OnActionUnTrigger();
 
-	////Trigger Input 버튼 땔때 실행됨 
-	//UFUNCTION()
-	//void OnActionUnTrigger();
+	// LineTracer 기능 구현
+	void PerformLineTrace();
 
-	// 상호작용 인터페이스
-	void ProcessInteraction(AActor* Actor);
+	// 오버랩 이벤트 기능 구현 
+	virtual void NotifyActorBeginOverlap( AActor* OtherActor ) override;
+	virtual void NotifyActorEndOverlap( AActor* OtherActor ) override;
+	// 오버랩 확인 변수
+	bool bIsControllerOverlapping = false;
 
 	//Grab된 물건의 Component
 	UPROPERTY()
@@ -130,4 +128,14 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Grab", meta = (AllowPrivateAccess = true))
 	float TorquePower = 1;
 
+
+	// Interaction 확인
+	// Grab 상태를 반환하는 메소드
+	bool IsGrabbed() const { return bIsGrabbed; };
+
+	// Trigger 상태를 반환하는 메소드
+	bool IsTriggerPressed() const { return bIsTrigger; }
+
+	// 오버랩 상태를 확인하는 메소드 
+	bool IsPlayerOverlapping() const { return bIsControllerOverlapping; }
 };

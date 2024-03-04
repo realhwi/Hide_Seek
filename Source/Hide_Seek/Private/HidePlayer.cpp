@@ -15,6 +15,7 @@
 #include "Interaction.h"
 
 
+
 // Sets default values
 AHidePlayer::AHidePlayer()
 {
@@ -40,12 +41,6 @@ AHidePlayer::AHidePlayer()
 	RightController->SetTrackingSource( EControllerHand::Right );
 	// RightController->SetTrackingMotionSource(FName("Right"));
 
-	//Hand Collision 
-	/*LeftControllerCollision = CreateDefaultSubobject<USphereComponent>( TEXT( "LefrControllerCollision" ) );
-	LeftControllerCollision->SetupAttachment( LeftController );
-	RightControllerCollision = CreateDefaultSubobject<USphereComponent>( TEXT( "RightControllerCollision" ) );
-	RightControllerCollision->SetupAttachment( RightController );*/
-
 	//Hand Mesh
 	LeftHandMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Left Hand Mesh"));
 	LeftHandMesh->AttachToComponent( GetMesh() , FAttachmentTransformRules::SnapToTargetIncludingScale , TEXT( "hand_lPoint" ) );
@@ -67,6 +62,12 @@ AHidePlayer::AHidePlayer()
 	{
 		RightHandMesh->SetStaticMesh(RightMeshFinder.Object);
 	}
+
+	// LeftController 오버랩 이벤트 활성화
+	LeftController->SetCollisionEnabled( ECollisionEnabled::QueryOnly );
+	LeftController->SetCollisionObjectType( ECC_GameTraceChannel1 ); // 사용자 정의 충돌 채널 설정
+	LeftController->SetCollisionResponseToAllChannels( ECR_Ignore );
+	LeftController->SetCollisionResponseToChannel( ECC_Pawn , ECR_Overlap );
 }
 
 // Called when the game starts or when spawned
@@ -89,6 +90,7 @@ void AHidePlayer::BeginPlay()
 			}
 		}
 	}
+	bIsTrigger = false;
 }
 
 // Called every frame
@@ -97,7 +99,11 @@ void AHidePlayer::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 	RightGrabbing();
-	// TriggerGragging();
+	
+	if (bIsTrigger)
+	{
+		PerformLineTrace();
+	}
 }
 
 // Called to bind functionality to input
@@ -112,8 +118,8 @@ void AHidePlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 		InputSystem->BindAction(IA_Look, ETriggerEvent::Triggered, this, &AHidePlayer::Look);
 		InputSystem->BindAction(IA_Grab, ETriggerEvent::Started, this, &AHidePlayer::OnActionTryGrab );
 		InputSystem->BindAction(IA_Grab, ETriggerEvent::Completed, this, &AHidePlayer::OnActionUnGrab );
-		/*InputSystem->BindAction(IA_Trigger, ETriggerEvent::Started, this, &AHidePlayer::OnActionTrigger);
-		InputSystem->BindAction(IA_Trigger, ETriggerEvent::Completed, this, &AHidePlayer::OnActionUnTrigger);*/
+		InputSystem->BindAction(IA_Trigger, ETriggerEvent::Started, this, &AHidePlayer::OnActionTrigger);
+		InputSystem->BindAction(IA_Trigger, ETriggerEvent::Completed, this, &AHidePlayer::OnActionUnTrigger);
 	}
 }
 
@@ -241,19 +247,24 @@ void AHidePlayer::OnActionUnGrab()
 	//Collision 활성화하기
 	GrabbedObject->SetCollisionEnabled( ECollisionEnabled::QueryAndPhysics );
 
-	//던지기
+	//던지기 힘 10%만 사용 
+	float ReducedThrowStrength = ThrowStrength * 0.1f;
 	GrabbedObject->AddForce( ThrowDirection * ThrowStrength * GrabbedObject->GetMass() );
-	//물건을 회전하기
-	float Angle;
-	FVector Axis;
+
+	// 물건을 회전하기, 회전 10%만 사용
+	float Angle; FVector Axis;
 	//저장한 Quaternion인 Delta 회전값에서 Axis and Angle 추출하기
 	DeltaRotation.ToAxisAndAngle( Axis , Angle );
 
-	float DeltaTime = GetWorld()->DeltaTimeSeconds;
+	float ReducedTorquePower = TorquePower * 0.1f;
+	FVector AngularVelocity = (1 / GetWorld()->DeltaTimeSeconds) * Angle * Axis;
+	GrabbedObject->SetPhysicsAngularVelocityInRadians( AngularVelocity * ReducedTorquePower , true );
+	
+	// float DeltaTime = GetWorld()->DeltaTimeSeconds;
 	//회전속도 계산하기
-	FVector AngularVelocity = (1 / DeltaTime) * Angle * Axis;
+	// FVector AngularVelocity = (1 / DeltaTime) * Angle * Axis;
 	//회전힘 적용하기
-	GrabbedObject->SetPhysicsAngularVelocityInRadians( AngularVelocity * TorquePower , true );
+	// GrabbedObject->SetPhysicsAngularVelocityInRadians( AngularVelocity * TorquePower , true );
 
 	//Grab한 물건을 놓았기 때문에 변수에 nullptr 할당 	
 	GrabbedObject = nullptr;
@@ -283,48 +294,66 @@ void AHidePlayer::RightGrabbing()
 	PreviousGrabRotation = RightController->GetComponentQuat();
 }
 
-//void AHidePlayer::TriggerGragging()
-//{
-//	if (!bIsTriggered) { return; }
-//}
-//
-//void AHidePlayer::OnActionTrigger()
-//{
-//	FVector Start = LeftController->GetComponentLocation(); // 또는 RightController, 상황에 따라 다름
-//	FVector ForwardVector = LeftController->GetForwardVector(); // 컨트롤러의 전방 벡터
-//	FVector End = Start + (ForwardVector * 1000); // 1000은 Line Trace의 길이
-//	FHitResult HitResult;
-//
-//	bIsTriggered = true;
-//	// Line Trace 실행
-//	if (GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, ECC_Visibility))
-//	{
-//		if (HitResult.GetActor() != nullptr)
-//		{
-//			// 여기서 HitResult를 사용하여 상호작용 로직 구현
-//			ProcessInteraction(HitResult.GetActor());
-//		}
-//	}
-//}
-//
-//void AHidePlayer::OnActionUnTrigger()
-//{
-//	 bIsTriggered = false;
-//}
-//
-//void AHidePlayer::ProcessInteraction(AActor* Actor)
-//{
-//	AInteraction* Interaction = Cast<AInteraction>(Actor);
-//	if(Interaction)
-//	{
-//		Interaction->Interact();
-//	}
-//	else
-//	{
-//		
-//	}
-//}
-//
-//
+void AHidePlayer::PerformLineTrace()
+{
+	if (!RightController) // RightHandMesh가 초기화되었는지 확인
+	{
+		UE_LOG( LogTemp , Warning , TEXT( "RightHandMesh is not initialized." ) );
+		return;
+	}
+
+	FVector Start = RightController->GetComponentLocation(); // HandMesh 또는 HandController의 위치
+	FVector ForwardVector = RightController->GetForwardVector(); // HandMesh 또는 HandController의 전방 벡터
+	FVector End = Start + ForwardVector * 5000; // 선의 길이를 5000으로 조정
+	FHitResult HitResult;
+	FCollisionQueryParams Params;
+	Params.AddIgnoredActor( this );
+
+	if (GetWorld()->LineTraceSingleByChannel( HitResult , Start , End , ECC_Visibility , Params ))
+	{
+		DrawDebugLine( GetWorld() , Start , HitResult.ImpactPoint , FColor::Red , false , 0 , 0 , 1 );
+	}
+	else 
+	{
+		// 충돌이 없을 경우에도 선을 그리고 시각적으로 라인 트레이스를 확인 
+		DrawDebugLine( GetWorld() , Start , End , FColor::Red , false , 0 , 0 , 1 );
+	}
+}
+
+void AHidePlayer::NotifyActorBeginOverlap(AActor* OtherActor)
+{
+	Super::NotifyActorBeginOverlap(OtherActor);
+
+	// 오버랩이 시작됐을 때의 로직
+	if (OtherActor && OtherActor->IsA( AInteraction::StaticClass() ))
+	{
+		bIsControllerOverlapping = true;
+	}
+}
+
+void AHidePlayer::NotifyActorEndOverlap(AActor* OtherActor)
+{
+	Super::NotifyActorEndOverlap(OtherActor);
+
+	// 오버랩이 끝났을 때의 로직
+	if (OtherActor && OtherActor->IsA( AInteraction::StaticClass() ))
+	{
+		bIsControllerOverlapping = false;
+	}
+}
+
+void AHidePlayer::OnActionTrigger()
+{
+	UE_LOG( LogTemp , Warning , TEXT( "Trigger" ) );
+
+	bIsTrigger = true;
+}
+
+void AHidePlayer::OnActionUnTrigger()
+{
+	UE_LOG( LogTemp , Warning , TEXT( "UnTrigger" ) );
+
+	bIsTrigger = false;
+}
 
 
