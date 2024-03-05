@@ -1,6 +1,5 @@
 ﻿// Fill out your copyright notice in the Description page of Project Settings.
 
-
 #include "Interaction.h"
 #include "HidePlayer.h"
 #include "Kismet/GameplayStatics.h"
@@ -18,7 +17,12 @@ void AInteraction::BeginPlay()
 {
 	Super::BeginPlay();
 
-	Player = Cast<AHidePlayer>( UGameplayStatics::GetPlayerCharacter( this , 0 ) );
+	 AHidePlayer* PlayerCharacter = Cast<AHidePlayer>( UGameplayStatics::GetPlayerCharacter( GetWorld() , 0 ) );
+	 if (PlayerCharacter)
+	 {
+		 OnTriggerInteract( PlayerCharacter );
+		 OnGrabInteract( PlayerCharacter );
+	 }
 }
 
 // Called every frame
@@ -26,6 +30,12 @@ void AInteraction::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	/* AHidePlayer* PlayerCharacter = Cast<AHidePlayer>( UGameplayStatics::GetPlayerCharacter( GetWorld() , 0 ) );
+	 if (PlayerCharacter)
+	 {
+	 	OnInteract( PlayerCharacter );
+	 }*/
 }
+
 
 

@@ -6,6 +6,7 @@
 #include "GameFramework/Character.h"
 #include "InputActionValue.h"
 #include "InputMappingContext.h"
+#include "Interaction.h"
 #include "HidePlayer.generated.h"
 
 UCLASS()
@@ -69,9 +70,20 @@ private:
 
 public:
 
+	// 상호작용 액터
+	// Trigger와 Grab 상태 확인
+	UFUNCTION( BlueprintCallable , Category = "Interaction" )
+	bool IsTrigger() const;
+
+	UFUNCTION( BlueprintCallable , Category = "Interaction" )
+	bool IsGrab() const;
+
+	void OnTriggerInteract( AInteraction* InteractionActor );
+	void OnGrabInteract( AInteraction* InteractionActor );
+
 	//Grab Overlap 할때 사용하는 Grab 범위 또는 Overlap Sphere 크기
 	UPROPERTY(EditAnywhere, Category = "Grab", meta = (AllowPrivateAccess = true))
-	float GrabRange = 100;
+	float GrabRange = 50;
 
 	//Grab Input 버튼 누를때 실행됨
 	UFUNCTION()
@@ -83,28 +95,25 @@ public:
 
 	//Tick에서 실행됨
 	//만약에 bIsGrabbed이 True면 프레임마다 호출됨
+	UFUNCTION()
 	void RightGrabbing();
 	//이걸로 누름/땜 상태를 제어할 수 있음
-	bool bIsGrabbed;
+	bool bIsGrabbed = false;
 
 	//Trigger Input 버튼 누를때 실행됨
-	UFUNCTION()
+	UFUNCTION(BlueprintCallable)
 	void OnActionTrigger();
 	// bIsTriggered가 True이면 프레임마다 호출됨
-	bool bIsTrigger;
+	bool bIsTrigger=false;
 
 	//Trigger Input 버튼 땔때 실행됨 
 	UFUNCTION()
 	void OnActionUnTrigger();
 
 	// LineTracer 기능 구현
+	UFUNCTION()
 	void PerformLineTrace();
 
-	// 오버랩 이벤트 기능 구현 
-	virtual void NotifyActorBeginOverlap( AActor* OtherActor ) override;
-	virtual void NotifyActorEndOverlap( AActor* OtherActor ) override;
-	// 오버랩 확인 변수
-	bool bIsControllerOverlapping = false;
 
 	//Grab된 물건의 Component
 	UPROPERTY()
@@ -115,7 +124,7 @@ public:
 
 	//던질때 힘
 	UPROPERTY(EditAnywhere, Category = "Grab", meta = (AllowPrivateAccess = true))
-	float ThrowStrength = 10000;
+	float ThrowStrength = 10;
 
 	//Grab위치를 실시간으로 업데이트 해야하기 때문에 여기다가 저장함
 	FVector PreviousGrabPosition;
@@ -128,14 +137,4 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Grab", meta = (AllowPrivateAccess = true))
 	float TorquePower = 1;
 
-
-	// Interaction 확인
-	// Grab 상태를 반환하는 메소드
-	bool IsGrabbed() const { return bIsGrabbed; };
-
-	// Trigger 상태를 반환하는 메소드
-	bool IsTriggerPressed() const { return bIsTrigger; }
-
-	// 오버랩 상태를 확인하는 메소드 
-	bool IsPlayerOverlapping() const { return bIsControllerOverlapping; }
 };

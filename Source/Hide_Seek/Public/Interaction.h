@@ -3,9 +3,11 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "HidePlayer.h"
 #include "GameFramework/Actor.h"
 #include "Interaction.generated.h"
+
+
+class AHidePlayer;
 
 UCLASS()
 class HIDE_SEEK_API AInteraction : public AActor
@@ -24,7 +26,12 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-	AHidePlayer* Player;
+	// 블루프린트에서 구현할 트리거 상호작용 함수
+	UFUNCTION( BlueprintImplementableEvent , Category = "Interaction" )
+	void OnTriggerInteract( AHidePlayer* Player );
 
+	// 블루프린트에서 구현할 그랩 상호작용 함수
+	UFUNCTION( BlueprintImplementableEvent , Category = "Interaction" )
+	void OnGrabInteract( AHidePlayer* Player );
 
 };

@@ -11,8 +11,7 @@
 #include "MotionControllerComponent.h"
 #include "GameFramework/Actor.h"
 #include "HeadMountedDisplayFunctionLibrary.h"
-#include "Components/SphereComponent.h"
-#include "Interaction.h"
+
 
 
 
@@ -90,7 +89,6 @@ void AHidePlayer::BeginPlay()
 			}
 		}
 	}
-	bIsTrigger = false;
 }
 
 // Called every frame
@@ -171,6 +169,26 @@ void AHidePlayer::Look(const FInputActionValue& Value)
 
 }
 
+bool AHidePlayer::IsTrigger() const
+{
+	return bIsTrigger;
+}
+
+bool AHidePlayer::IsGrab() const
+{
+	return bIsGrabbed;
+}
+
+void AHidePlayer::OnTriggerInteract(AInteraction* InteractionActor)
+{
+	InteractionActor->OnTriggerInteract( this );
+}
+
+void AHidePlayer::OnGrabInteract(AInteraction* InteractionActor)
+{
+	InteractionActor->OnGrabInteract( this );
+}
+
 void AHidePlayer::OnActionTryGrab()
 {
 	UE_LOG( LogTemp , Warning , TEXT( "Try" ));
@@ -210,13 +228,22 @@ void AHidePlayer::OnActionTryGrab()
 			//현재 Index 저장하기	
 			ClosestObjectIndex = i;
 		}
-
 		//Grab bool 깃발 올리기	
 		bIsGrabbed = true;
+
+		// 잡고 있는 객체가 AInteraction 클래스의 인스턴스인지 확인
+		AInteraction* InteractionActor = Cast<AInteraction>( GrabbedObject );
+		if (InteractionActor)
+		{
+			UE_LOG( LogTemp , Warning , TEXT( "Grap!!" ) );
+			// AInteraction 인스턴스에 대한 추가 작업 수행
+			OnTriggerInteract( InteractionActor );
+		}
 	}
 
 	//만약에 물건을 잡았고 Grab bool 깃발이 올라갔으면
-	if (bIsGrabbed) {
+	if (bIsGrabbed) 
+	{
 		//ClosestObjectIndex를 사용해서 Grab한 물건을 HitObjects Array에서 찾아서 저장하기
 		GrabbedObject = HitObjects[ClosestObjectIndex].GetComponent();
 		//Physics 비활성화
@@ -240,6 +267,7 @@ void AHidePlayer::OnActionUnGrab()
 
 	//Grab bool 깃발 내리기
 	bIsGrabbed = false;
+
 	//손에서 Attach한 Actor때기
 	GrabbedObject->DetachFromComponent( FDetachmentTransformRules::KeepWorldTransform );
 	//Physics 활성화하기
@@ -248,7 +276,7 @@ void AHidePlayer::OnActionUnGrab()
 	GrabbedObject->SetCollisionEnabled( ECollisionEnabled::QueryAndPhysics );
 
 	//던지기 힘 10%만 사용 
-	float ReducedThrowStrength = ThrowStrength * 0.1f;
+	float ReducedThrowStrength = ThrowStrength * 1.0f;
 	GrabbedObject->AddForce( ThrowDirection * ThrowStrength * GrabbedObject->GetMass() );
 
 	// 물건을 회전하기, 회전 10%만 사용
@@ -256,10 +284,10 @@ void AHidePlayer::OnActionUnGrab()
 	//저장한 Quaternion인 Delta 회전값에서 Axis and Angle 추출하기
 	DeltaRotation.ToAxisAndAngle( Axis , Angle );
 
-	float ReducedTorquePower = TorquePower * 0.1f;
-	FVector AngularVelocity = (1 / GetWorld()->DeltaTimeSeconds) * Angle * Axis;
+	float ReducedTorquePower = TorquePower * 1.0f;
+	FVector AngularVelocity = Axis * FMath::DegreesToRadians( Angle ) / GetWorld()->DeltaTimeSeconds;
 	GrabbedObject->SetPhysicsAngularVelocityInRadians( AngularVelocity * ReducedTorquePower , true );
-	
+
 	// float DeltaTime = GetWorld()->DeltaTimeSeconds;
 	//회전속도 계산하기
 	// FVector AngularVelocity = (1 / DeltaTime) * Angle * Axis;
@@ -304,41 +332,32 @@ void AHidePlayer::PerformLineTrace()
 
 	FVector Start = RightController->GetComponentLocation(); // HandMesh 또는 HandController의 위치
 	FVector ForwardVector = RightController->GetForwardVector(); // HandMesh 또는 HandController의 전방 벡터
-	FVector End = Start + ForwardVector * 5000; // 선의 길이를 5000으로 조정
+	FVector DownVector = -RightController->GetUpVector(); // 컨트롤러의 위 방향의 반대
+	// ForwardVector와 DownVector를 조합하여 라인트레이스의 방향을 아래로
+	// 여기서는 ForwardVector의 90%와 DownVector의 10%를 조합
+	FVector Direction = ForwardVector * 0.9f + DownVector * 0.1f;
+	Direction.Normalize(); // 방향 벡터를 정규화합니다.
+	// 선의 길이를 5000으로 조정
+	FVector End = Start + ForwardVector * 1000; 
 	FHitResult HitResult;
 	FCollisionQueryParams Params;
 	Params.AddIgnoredActor( this );
 
 	if (GetWorld()->LineTraceSingleByChannel( HitResult , Start , End , ECC_Visibility , Params ))
 	{
-		DrawDebugLine( GetWorld() , Start , HitResult.ImpactPoint , FColor::Red , false , 0 , 0 , 1 );
+		DrawDebugLine( GetWorld() , Start , HitResult.ImpactPoint , FColor::Red , false , 0 , 0 , 0.1 );
+		
+		// 여기서 충돌된 액터가 AInteraction 클래스의 인스턴스인지 확인
+		AInteraction* InteractionActor = Cast<AInteraction>( HitResult.GetActor() );
+		if (InteractionActor)
+		{
+			// 인터렉션 액터와 상호작용 처리를 수행하는 함수를 호출
+			OnTriggerInteract( InteractionActor );
+		}
 	}
-	else 
+	else
 	{
-		// 충돌이 없을 경우에도 선을 그리고 시각적으로 라인 트레이스를 확인 
-		DrawDebugLine( GetWorld() , Start , End , FColor::Red , false , 0 , 0 , 1 );
-	}
-}
-
-void AHidePlayer::NotifyActorBeginOverlap(AActor* OtherActor)
-{
-	Super::NotifyActorBeginOverlap(OtherActor);
-
-	// 오버랩이 시작됐을 때의 로직
-	if (OtherActor && OtherActor->IsA( AInteraction::StaticClass() ))
-	{
-		bIsControllerOverlapping = true;
-	}
-}
-
-void AHidePlayer::NotifyActorEndOverlap(AActor* OtherActor)
-{
-	Super::NotifyActorEndOverlap(OtherActor);
-
-	// 오버랩이 끝났을 때의 로직
-	if (OtherActor && OtherActor->IsA( AInteraction::StaticClass() ))
-	{
-		bIsControllerOverlapping = false;
+		DrawDebugLine( GetWorld() , Start , End , FColor::Red , false , 0 , 0 , 0.1 );
 	}
 }
 
@@ -347,6 +366,8 @@ void AHidePlayer::OnActionTrigger()
 	UE_LOG( LogTemp , Warning , TEXT( "Trigger" ) );
 
 	bIsTrigger = true;
+
+
 }
 
 void AHidePlayer::OnActionUnTrigger()
