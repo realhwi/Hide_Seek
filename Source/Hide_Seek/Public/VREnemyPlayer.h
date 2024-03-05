@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
 
@@ -65,21 +65,21 @@ private:
 	UFUNCTION()
 	void EnemyLook(const FInputActionValue& value);
 
-	UFUNCTION()
-	void EInteractionStart(const FInputActionValue& value);
+	//UFUNCTION()
+	//void EInteractionStart(const FInputActionValue& value);
 
-	UFUNCTION()
-	void EInteractionOnGoing(const FInputActionValue& value);
+	//UFUNCTION()
+	//void EInteractionOnGoing(const FInputActionValue& value);
 
-	UFUNCTION()
-	void EInteractionComplete(const FInputActionValue& value);
+	//UFUNCTION()
+	//void EInteractionComplete(const FInputActionValue& value);
 
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float activeSkillTime;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float activeMaxSkillTime;
+	float activeMaxSkillTime = 180;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool activeFirstSkill;
@@ -95,4 +95,19 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool inAltar;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	class AActor* playerChar;
+
+	UPROPERTY( EditAnywhere , BlueprintReadWrite )
+	class AActor* door;
+
+	UPROPERTY( EditAnywhere , BlueprintReadWrite )
+	class AActor* itemBox;
+
+	UPROPERTY( EditAnywhere , BlueprintReadWrite )
+	class AActor* enemyAltar;
+
+	UPROPERTY( EditAnywhere, BlueprintReadWrite )
+	float findActorRadius = 150;
 };

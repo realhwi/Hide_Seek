@@ -9,6 +9,7 @@
 #include "MotionControllerComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Components/SphereComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/KismetSystemLibrary.h"
 
 // Sets default values
@@ -93,9 +94,9 @@ void AVREnemyPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 		inputSystem->BindAction(IA_VREnemyMove, ETriggerEvent::Triggered, this, &AVREnemyPlayer::EnemyMove);
 		inputSystem->BindAction(IA_VREnemyLook, ETriggerEvent::Triggered, this, &AVREnemyPlayer::EnemyLook);
 
-		inputSystem->BindAction(IA_EnemyInteraction, ETriggerEvent::Started, this, &AVREnemyPlayer::EInteractionStart);
-		inputSystem->BindAction(IA_EnemyInteraction, ETriggerEvent::Ongoing, this, &AVREnemyPlayer::EInteractionOnGoing);
-		inputSystem->BindAction(IA_EnemyInteraction, ETriggerEvent::Completed, this, &AVREnemyPlayer::EInteractionComplete);
+		//inputSystem->BindAction(IA_EnemyInteraction, ETriggerEvent::Started, this, &AVREnemyPlayer::EInteractionStart);
+		//inputSystem->BindAction(IA_EnemyInteraction, ETriggerEvent::Ongoing, this, &AVREnemyPlayer::EInteractionOnGoing);
+		//inputSystem->BindAction(IA_EnemyInteraction, ETriggerEvent::Completed, this, &AVREnemyPlayer::EInteractionComplete);
 		
 	}
 }
@@ -119,18 +120,51 @@ void AVREnemyPlayer::EnemyLook(const FInputActionValue& value)
 	}
 }
 
-void AVREnemyPlayer::EInteractionStart(const FInputActionValue& value)
-{
-
-}
-
-void AVREnemyPlayer::EInteractionOnGoing(const FInputActionValue& value)
-{
-
-}
-
-void AVREnemyPlayer::EInteractionComplete(const FInputActionValue& value)
-{
-
-}
+//void AVREnemyPlayer::EInteractionStart(const FInputActionValue& value)
+//{
+//	moveSpeed = 400;
+//
+//	FVector loc = GetActorLocation() + FVector( 0 , 100 , 0 );
+//
+//	DrawDebugString( GetWorld() , loc , TEXT( "Player" ) , this , FColor::Black , 5 , false , 1 );
+//}
+//
+//void AVREnemyPlayer::EInteractionOnGoing(const FInputActionValue& value)
+//{
+//	TArray<struct FOverlapResult> outOverlaps;
+//	// FVector pos = rightMotionCtrl->GetComponentLocation();
+//	FVector pos = GetActorLocation();
+//	FQuat rot = FQuat::Identity;
+//	FCollisionObjectQueryParams objectQueryParams( FCollisionObjectQueryParams::InitType::AllObjects );
+//	FCollisionShape collisionShape = FCollisionShape::MakeSphere(findActorRadius);
+//
+//	bool bHits = GetWorld()->OverlapMultiByObjectType( outOverlaps , pos , rot , objectQueryParams , collisionShape );
+//
+//	if (bHits)
+//	{
+//		for(auto result : outOverlaps)
+//		{
+//			if (result.GetActor()->ActorHasTag( TEXT( "Player" ) ))
+//			{
+//				playerChar = result.GetActor();
+//
+//				break;
+//			}
+//		}
+//	}
+//
+//	if(playerChar)
+//	{
+//		FVector loc = GetActorLocation() + FVector(0 , 100 , 0 );
+//
+//		DrawDebugString( GetWorld() , loc , TEXT( "Player" ) , nullptr , FColor::Black , 0 , false , 1 );
+//	}
+//
+//	DrawDebugSphere( GetWorld() , GetActorLocation() , findActorRadius , 16 , FColor::Cyan , false , 0 );
+//}
+//
+//void AVREnemyPlayer::EInteractionComplete(const FInputActionValue& value)
+//{
+//	moveSpeed = 600;
+//}
 
