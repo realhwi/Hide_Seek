@@ -140,6 +140,9 @@ public:
 	// Player Enemy Overlap GameOver Event
 	UFUNCTION()
 	void OnOverlapBegin( UPrimitiveComponent* OverlappedComp , AActor* OtherActor , UPrimitiveComponent* OtherComp , int32 OtherBodyIndex , bool bFromSweep , const FHitResult& SweepResult );
+	UFUNCTION()
+	virtual void OnOverlapEnd( UPrimitiveComponent* OverlappedComp , AActor* OtherActor , UPrimitiveComponent* OtherComp , int32 OtherBodyIndex );
+
 
 	UPROPERTY( EditDefaultsOnly , BlueprintReadWrite )
 	class UPlayerUI* playerUI;
@@ -148,9 +151,26 @@ public:
 	TSubclassOf<class UPlayerUI> playerUIFactory;
 
 	UPROPERTY( EditDefaultsOnly )
+	class UGameOver* GameOverUI;
+
+	UPROPERTY( EditDefaultsOnly , BlueprintReadWrite )
+	TSubclassOf<class UGameOver> GameOverUIFactory;
+
+	UPROPERTY( EditDefaultsOnly )
 	// 생명 최대 값 
 	int32 maxLifeCount = 3;
 	// 1부터 시작해서 max까지
 	int32 LifeCount = maxLifeCount;
+
+	// 충돌 확인 
+	UPROPERTY( EditAnywhere )
+	class UParticleSystem* VFX;
+
+	// Die 
+	UFUNCTION()
+	void OnLifeDepleted();
+
+	// 생명 하나 감소, 이게 true가되면 텔레포트 하기 
+	bool bLifeRemove = false;
 
 };

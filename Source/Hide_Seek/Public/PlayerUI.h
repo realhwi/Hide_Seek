@@ -14,24 +14,20 @@ class HIDE_SEEK_API UPlayerUI : public UUserWidget
 {
 	GENERATED_BODY()
 
-
 public:
+
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE( FOnLifeDepletedDelegate );
+	UPROPERTY( BlueprintAssignable , Category = "Events" )
+	FOnLifeDepletedDelegate OnLifeDepleted;
+
 	UPROPERTY(EditDefaultsOnly,meta =(BindWidget))
-	class UUniformGridPanel* grid_Life;
+	class UUniformGridPanel* grid_Life
 
 	UPROPERTY( EditDefaultsOnly)
 	TSubclassOf<class UUserWidget>LifeUIFactory;
 
-	// Player UI 작업 
-	UPROPERTY( EditDefaultsOnly , BlueprintReadWrite )
-	TSubclassOf<class UPlayerUI> playerUIFactory;
-
-	UPROPERTY( EditDefaultsOnly , BlueprintReadWrite )
-	class UPlayerUI* playerUI;
-
 	// 생명칩 추가 
 	void AddLife();
 	// 생명칩 삭제 
-	void RemoveLife( int32 index );
-
+	void RemoveLife( int32 index = -1 );
 };

@@ -12,9 +12,9 @@
 #include "GameFramework/Actor.h"
 #include "HeadMountedDisplayFunctionLibrary.h"
 #include "PlayerUI.h"
+#include "GameOver.h"
 #include "VREnemyPlayer.h"
-#include "Components/WidgetComponent.h"
-
+#include "Kismet/GameplayStatics.h"
 
 class UWidgetComponent;
 // Sets default values
@@ -41,6 +41,9 @@ AHidePlayer::AHidePlayer()
 	RightController->SetupAttachment(GetRootComponent());
 	RightController->SetTrackingSource( EControllerHand::Right );
 	// RightController->SetTrackingMotionSource(FName("Right"));
+
+	GetMesh()->SetupAttachment( GetCapsuleComponent() );
+	GetMesh()->SetRelativeLocation( FVector( 0.0f , 0.0f , 0.0f ) ); // 이 값은 실제 필요한 값으로 조정해야 합니다.
 
 	//Hand Mesh
 	LeftHandMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Left Hand Mesh"));
@@ -90,29 +93,29 @@ void AHidePlayer::BeginPlay()
 	
 	APlayerController* Playercontroller = Cast<APlayerController>(GetWorld()->GetFirstPlayerController());
 
+	// 위젯 인스턴스 생성 및 화면에 추가
 	if (playerUIFactory)
 	{
 		playerUI = CreateWidget<UPlayerUI>( GetWorld() , playerUIFactory );
 		if (playerUI)
 		{
-			// 3D 위젯 컴포넌트 생성 및 설정
-			UWidgetComponent* widgetComponent = NewObject<UWidgetComponent>( this );
-			widgetComponent->RegisterComponent();
-			widgetComponent->AttachToComponent( CameraComponent , FAttachmentTransformRules::KeepRelativeTransform );
-			widgetComponent->SetWidget( playerUI );
-			widgetComponent->SetDrawSize( FVector2D( 1920 , 1080 ) ); // 적절한 크기로 조정
-			widgetComponent->SetRelativeLocation( FVector( 100 , 0 , 0 ) ); // 카메라로부터의 상대적 위치 조정
-			widgetComponent->SetWidgetSpace( EWidgetSpace::World ); // World 또는 Screen 중 선택
+			playerUI->AddToPlayerScreen();
+
+			// 초기 생명값 설정을 위해 AddLife() 호출
+			for (int32 i = 0; i < maxLifeCount; i++)
+			{
+				playerUI->AddLife();
+			}
 		}
 	}
+	if (playerUI)
+	{
+		playerUI->OnLifeDepleted.AddDynamic( this , &AHidePlayer::OnLifeDepleted );
+	}
+
 
 	// 오버랩 이벤트 핸들러를 바인딩
 	GetCapsuleComponent()->OnComponentBeginOverlap.AddDynamic( this , &AHidePlayer::OnOverlapBegin );
-
-	for(int32 i=0; i<maxLifeCount; i++)
-	{
-		playerUI->AddLife();
-	}
 
 	if (Playercontroller)
 	{
@@ -412,7 +415,37 @@ void AHidePlayer::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* Ot
 	if (OtherActor != nullptr && OtherActor != this && OtherActor->IsA( AVREnemyPlayer::StaticClass() ))
 	{
 		UE_LOG( LogTemp , Warning , TEXT( "Overlapped!!" ) );
-		playerUI->RemoveLife(LifeCount);
+		playerUI->RemoveLife();
+
+		if (bFromSweep) // 스위핑 중에 충돌이 발생한 경우에만
+		{
+			// 충돌 위치에 파티클 시스템을 생성
+			UGameplayStatics::SpawnEmitterAtLocation(
+				GetWorld() ,
+				VFX , // VFX는 유효한 UParticleSystem* 참조
+				SweepResult.ImpactPoint , // 충돌 지점에서 에미터를 생성
+				SweepResult.ImpactNormal.Rotation() // 에미터의 회전은 충돌 표면의 법선을 기준으로 설정
+				);
+			bLifeRemove = true;
+		}
+	}
+}
+
+void AHidePlayer::OnOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
+	int32 OtherBodyIndex)
+{
+	bLifeRemove = false;
+}
+
+void AHidePlayer::OnLifeDepleted()
+{
+	if (GameOverUIFactory != nullptr)
+	{
+		GameOverUI = CreateWidget<UGameOver>( GetWorld() , GameOverUIFactory );
+		if (GameOverUI != nullptr)
+		{
+			GameOverUI->AddToViewport();
+		}
 	}
 }
 
