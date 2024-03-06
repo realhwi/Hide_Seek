@@ -13,8 +13,10 @@
 #include "HeadMountedDisplayFunctionLibrary.h"
 #include "PlayerUI.h"
 #include "VREnemyPlayer.h"
+#include "Components/WidgetComponent.h"
 
 
+class UWidgetComponent;
 // Sets default values
 AHidePlayer::AHidePlayer()
 {
@@ -69,18 +71,14 @@ AHidePlayer::AHidePlayer()
 	LeftController->SetCollisionResponseToChannel( ECC_Pawn , ECR_Overlap );
 
 	// 캡슐 컴포넌트 콜리전 설정
-	//GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
-	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
+	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 	GetCapsuleComponent()->SetCollisionResponseToChannel( ECollisionChannel::ECC_Pawn , ECollisionResponse::ECR_Overlap );
 
-	// 오버랩 이벤트 핸들러를 바인딩
-	GetCapsuleComponent()->OnComponentBeginOverlap.AddDynamic( this , &AHidePlayer::OnOverlapBegin );
-
-	if(GetMesh())
+	/*if(GetMesh())
 	{
 		static ConstructorHelpers::FObjectFinder<USkeletalMesh> MeshFinder( TEXT( "/Script/Engine.SkeletalMesh'/Game/Characters/Mannequins/Meshes/SKM_Quinn_Simple.SKM_Quinn_Simple'" ) );
 		GetMesh()->SetSkeletalMesh( MeshFinder.Object);
-	}
+	}*/
 }
 
 
@@ -92,8 +90,24 @@ void AHidePlayer::BeginPlay()
 	
 	APlayerController* Playercontroller = Cast<APlayerController>(GetWorld()->GetFirstPlayerController());
 
-	playerUI = Cast<UPlayerUI>(CreateWidget(GetWorld(),playerUIFactory));
-	playerUI->AddToViewport();
+	if (playerUIFactory)
+	{
+		playerUI = CreateWidget<UPlayerUI>( GetWorld() , playerUIFactory );
+		if (playerUI)
+		{
+			// 3D 위젯 컴포넌트 생성 및 설정
+			UWidgetComponent* widgetComponent = NewObject<UWidgetComponent>( this );
+			widgetComponent->RegisterComponent();
+			widgetComponent->AttachToComponent( CameraComponent , FAttachmentTransformRules::KeepRelativeTransform );
+			widgetComponent->SetWidget( playerUI );
+			widgetComponent->SetDrawSize( FVector2D( 1920 , 1080 ) ); // 적절한 크기로 조정
+			widgetComponent->SetRelativeLocation( FVector( 100 , 0 , 0 ) ); // 카메라로부터의 상대적 위치 조정
+			widgetComponent->SetWidgetSpace( EWidgetSpace::World ); // World 또는 Screen 중 선택
+		}
+	}
+
+	// 오버랩 이벤트 핸들러를 바인딩
+	GetCapsuleComponent()->OnComponentBeginOverlap.AddDynamic( this , &AHidePlayer::OnOverlapBegin );
 
 	for(int32 i=0; i<maxLifeCount; i++)
 	{
@@ -113,7 +127,7 @@ void AHidePlayer::BeginPlay()
 		}
 	}
 
-	UHeadMountedDisplayFunctionLibrary::SetTrackingOrigin( EHMDTrackingOrigin::Floor );
+	UHeadMountedDisplayFunctionLibrary::SetTrackingOrigin( EHMDTrackingOrigin::Eye );
 }
 
 // Called every frame

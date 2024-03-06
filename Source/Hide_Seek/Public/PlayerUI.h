@@ -22,6 +22,13 @@ public:
 	UPROPERTY( EditDefaultsOnly)
 	TSubclassOf<class UUserWidget>LifeUIFactory;
 
+	// Player UI 작업 
+	UPROPERTY( EditDefaultsOnly , BlueprintReadWrite )
+	TSubclassOf<class UPlayerUI> playerUIFactory;
+
+	UPROPERTY( EditDefaultsOnly , BlueprintReadWrite )
+	class UPlayerUI* playerUI;
+
 	// 생명칩 추가 
 	void AddLife();
 	// 생명칩 삭제 

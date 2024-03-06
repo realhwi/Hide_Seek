@@ -21,5 +21,5 @@ void UPlayerUI::RemoveLife(int32 index)
 {
 	// grid의 index위치의 자식을 제거한다. 
 	grid_Life->RemoveChildAt(index);
-	// 플레이어가 술래랑 오버랩 되었을 때 실행 예정 
+	// 플레이어가 술래랑 오버랩 되었을 때 실행 예정
 }
