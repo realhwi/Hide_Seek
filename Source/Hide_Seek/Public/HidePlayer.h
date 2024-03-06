@@ -137,4 +137,23 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Grab", meta = (AllowPrivateAccess = true))
 	float TorquePower = 1;
 
+	
+	// Player UI 작업 
+	UPROPERTY( EditDefaultsOnly , BlueprintReadWrite )
+	TSubclassOf<class UPlayerUI> playerUIFactory;
+
+	UPROPERTY()
+	class UPlayerUI* playerUI;
+
+	UPROPERTY(EditDefaultsOnly)
+	// 생명 최대 값 
+	int32 maxLifeCount = 3;
+	// 1부터 시작해서 max까지
+	int32 LifeCount = maxLifeCount;
+
+	// Player Enemy Overlap GameOver Event
+	UFUNCTION()
+	void OnOverlapBegin( UPrimitiveComponent* OverlappedComp , AActor* OtherActor , UPrimitiveComponent* OtherComp , int32 OtherBodyIndex , bool bFromSweep , const FHitResult& SweepResult );
+
+	
 };

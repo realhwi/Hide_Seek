@@ -11,8 +11,8 @@
 #include "MotionControllerComponent.h"
 #include "GameFramework/Actor.h"
 #include "HeadMountedDisplayFunctionLibrary.h"
-
-
+#include "PlayerUI.h"
+#include "VREnemyPlayer.h"
 
 
 // Sets default values
@@ -67,15 +67,38 @@ AHidePlayer::AHidePlayer()
 	LeftController->SetCollisionObjectType( ECC_GameTraceChannel1 ); // 사용자 정의 충돌 채널 설정
 	LeftController->SetCollisionResponseToAllChannels( ECR_Ignore );
 	LeftController->SetCollisionResponseToChannel( ECC_Pawn , ECR_Overlap );
+
+	// 캡슐 컴포넌트 콜리전 설정
+	//GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
+	GetCapsuleComponent()->SetCollisionResponseToChannel( ECollisionChannel::ECC_Pawn , ECollisionResponse::ECR_Overlap );
+
+	// 오버랩 이벤트 핸들러를 바인딩
+	GetCapsuleComponent()->OnComponentBeginOverlap.AddDynamic( this , &AHidePlayer::OnOverlapBegin );
+
+	if(GetMesh())
+	{
+		static ConstructorHelpers::FObjectFinder<USkeletalMesh> MeshFinder( TEXT( "/Script/Engine.SkeletalMesh'/Game/Characters/Mannequins/Meshes/SKM_Quinn_Simple.SKM_Quinn_Simple'" ) );
+		GetMesh()->SetSkeletalMesh( MeshFinder.Object);
+	}
 }
+
 
 // Called when the game starts or when spawned
 void AHidePlayer::BeginPlay()
 {
 	Super::BeginPlay();
 
-	UHeadMountedDisplayFunctionLibrary::SetTrackingOrigin(EHMDTrackingOrigin::Eye);
+	
 	APlayerController* Playercontroller = Cast<APlayerController>(GetWorld()->GetFirstPlayerController());
+
+	playerUI = Cast<UPlayerUI>(CreateWidget(GetWorld(),playerUIFactory));
+	playerUI->AddToViewport();
+
+	for(int32 i=0; i<maxLifeCount; i++)
+	{
+		playerUI->AddLife();
+	}
 
 	if (Playercontroller)
 	{
@@ -89,6 +112,8 @@ void AHidePlayer::BeginPlay()
 			}
 		}
 	}
+
+	UHeadMountedDisplayFunctionLibrary::SetTrackingOrigin( EHMDTrackingOrigin::Floor );
 }
 
 // Called every frame
@@ -231,14 +256,6 @@ void AHidePlayer::OnActionTryGrab()
 		//Grab bool 깃발 올리기	
 		bIsGrabbed = true;
 
-		// 잡고 있는 객체가 AInteraction 클래스의 인스턴스인지 확인
-		AInteraction* InteractionActor = Cast<AInteraction>( GrabbedObject );
-		if (InteractionActor)
-		{
-			UE_LOG( LogTemp , Warning , TEXT( "Grap!!" ) );
-			// AInteraction 인스턴스에 대한 추가 작업 수행
-			OnTriggerInteract( InteractionActor );
-		}
 	}
 
 	//만약에 물건을 잡았고 Grab bool 깃발이 올라갔으면
@@ -257,6 +274,20 @@ void AHidePlayer::OnActionTryGrab()
 		PreviousGrabRotation = RightController->GetComponentRotation().Quaternion();
 		//잡기 회전값 저장
 		PreviousGrabRotation = RightController->GetComponentQuat();
+
+		if (GrabbedObject)
+		{
+			UE_LOG( LogTemp , Warning , TEXT( "GrabbedObject" ) );
+
+			// 잡고 있는 객체가 AInteraction 클래스의 인스턴스인지 확인
+			AInteraction* InteractionActor = Cast<AInteraction>( GrabbedObject->GetOwner() );
+			if (InteractionActor)
+			{
+				UE_LOG( LogTemp , Warning , TEXT( "Grap!!" ) );
+				// AInteraction 인스턴스에 대한 추가 작업 수행
+				OnTriggerInteract( InteractionActor );
+			}
+		}
 	}
 }
 
@@ -360,6 +391,17 @@ void AHidePlayer::PerformLineTrace()
 		DrawDebugLine( GetWorld() , Start , End , FColor::Red , false , 0 , 0 , 0.1 );
 	}
 }
+
+void AHidePlayer::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
+	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	if (OtherActor != nullptr && OtherActor != this && OtherActor->IsA( AVREnemyPlayer::StaticClass() ))
+	{
+		UE_LOG( LogTemp , Warning , TEXT( "Overlapped!!" ) );
+		playerUI->RemoveLife(LifeCount);
+	}
+}
+
 
 void AHidePlayer::OnActionTrigger()
 {

@@ -14,10 +14,17 @@ class HIDE_SEEK_API UPlayerUI : public UUserWidget
 {
 	GENERATED_BODY()
 
+
+public:
 	UPROPERTY(EditDefaultsOnly,meta =(BindWidget))
-	class UUniformGridPanel* Life;
+	class UUniformGridPanel* grid_Life;
 
 	UPROPERTY( EditDefaultsOnly)
 	TSubclassOf<class UUserWidget>LifeUIFactory;
+
+	// 생명칩 추가 
+	void AddLife();
+	// 생명칩 삭제 
+	void RemoveLife( int32 index );
 
 };
