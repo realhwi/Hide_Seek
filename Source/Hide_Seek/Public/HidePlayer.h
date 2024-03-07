@@ -32,7 +32,7 @@ public:
 	virtual void OnConstruction(const FTransform& Transform) override;
 
 	UPROPERTY(EditAnywhere)
-	float Movespeed = 600;
+	float Movespeed = 300;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputMappingContext* IMC_JHVRInput;
@@ -170,7 +170,8 @@ public:
 	UFUNCTION()
 	void OnLifeDepleted();
 
-	// 생명 하나 감소, 이게 true가되면 텔레포트 하기 
+	// 생명 하나 감소, 이게 true가되면 텔레포트 하기
+	UPROPERTY( EditDefaultsOnly )
 	bool bLifeRemove = false;
 
 };

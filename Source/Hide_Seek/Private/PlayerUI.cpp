@@ -31,7 +31,9 @@ void UPlayerUI::RemoveLife( int32 index )
         }
         grid_Life->RemoveChildAt( index );
     }
+
     int32 ChildCountAfter = grid_Life->GetChildrenCount();
+
 	UE_LOG( LogTemp , Warning , TEXT( "After removal, child count: %d" ) , ChildCountAfter );
 
     if (ChildCountAfter  == 0)

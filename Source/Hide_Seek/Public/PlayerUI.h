@@ -21,7 +21,7 @@ public:
 	FOnLifeDepletedDelegate OnLifeDepleted;
 
 	UPROPERTY(EditDefaultsOnly,meta =(BindWidget))
-	class UUniformGridPanel* grid_Life
+	class UUniformGridPanel* grid_Life;
 
 	UPROPERTY( EditDefaultsOnly)
 	TSubclassOf<class UUserWidget>LifeUIFactory;

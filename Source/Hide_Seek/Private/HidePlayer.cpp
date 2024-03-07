@@ -129,8 +129,8 @@ void AHidePlayer::BeginPlay()
 			}
 		}
 	}
-
-	UHeadMountedDisplayFunctionLibrary::SetTrackingOrigin( EHMDTrackingOrigin::Eye );
+	// 바닥에서 올라와서 걷는 거 
+	UHeadMountedDisplayFunctionLibrary::SetTrackingOrigin( EHMDTrackingOrigin::Floor );
 }
 
 // Called every frame
@@ -415,7 +415,15 @@ void AHidePlayer::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* Ot
 	if (OtherActor != nullptr && OtherActor != this && OtherActor->IsA( AVREnemyPlayer::StaticClass() ))
 	{
 		UE_LOG( LogTemp , Warning , TEXT( "Overlapped!!" ) );
-		playerUI->RemoveLife();
+		// count가 0 이하라면 함수 종료 
+		if(LifeCount<=0)
+			return;
+		// 생명 카운트 다운 
+		LifeCount--;
+		if(playerUI)
+		{
+			playerUI->RemoveLife( LifeCount );
+		}
 
 		if (bFromSweep) // 스위핑 중에 충돌이 발생한 경우에만
 		{
