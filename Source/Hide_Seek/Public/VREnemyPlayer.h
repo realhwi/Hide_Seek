@@ -52,11 +52,11 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	class UMotionControllerComponent* rightMotionCtrl;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	class USkeletalMeshComponent* leftHandMesh;
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	//class USkeletalMeshComponent* leftHandMesh;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	class USkeletalMeshComponent* rightHandMesh;
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	//class USkeletalMeshComponent* rightHandMesh;
 
 private:
 	UFUNCTION()
@@ -73,6 +73,20 @@ private:
 
 	//UFUNCTION()
 	//void EInteractionComplete(const FInputActionValue& value);
+
+	bool bHasController = false;
+	//UPROPERTY()
+	//class UEnhancedInputComponent* InputComponents;
+
+public:
+	UFUNCTION()
+	void FirstSkillActive();
+
+	UFUNCTION()
+	void SecondSkillActive();
+
+	UFUNCTION()
+	void ThirdSkillActive();
 
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
@@ -110,4 +124,13 @@ public:
 
 	UPROPERTY( EditAnywhere, BlueprintReadWrite )
 	float findActorRadius = 150;
+
+	UPROPERTY( EditAnywhere , BlueprintReadWrite )
+	float addIBLockTime;
+
+	UPROPERTY( EditAnywhere , BlueprintReadWrite )
+	float addEBLockTime;
+
+	UPROPERTY( EditAnywhere , BlueprintReadWrite )
+	float addEscapeLockTime;
 };

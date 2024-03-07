@@ -31,27 +31,29 @@ AVREnemyPlayer::AVREnemyPlayer()
 	rightMotionCtrl->SetupAttachment(GetRootComponent());
 	rightMotionCtrl->SetTrackingMotionSource(FName("Right"));
 
-	leftHandMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("LeftHandMesh"));
-	leftHandMesh->SetupAttachment(leftMotionCtrl);
+	//leftHandMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("LeftHandMesh"));
+	//leftHandMesh->SetupAttachment(leftMotionCtrl);
 
-	ConstructorHelpers::FObjectFinder<USkeletalMesh> tempLeftHandMesh(TEXT("/Script/Engine.SkeletalMesh'/Game/Characters/MannequinsXR/Meshes/SKM_QuinnXR_left.SKM_QuinnXR_left'"));
+	//ConstructorHelpers::FObjectFinder<USkeletalMesh> tempLeftHandMesh(TEXT("/Script/Engine.SkeletalMesh'/Game/Characters/MannequinsXR/Meshes/SKM_QuinnXR_left.SKM_QuinnXR_left'"));
 
-	if (tempLeftHandMesh.Succeeded())
-	{
-		leftHandMesh->SetSkeletalMesh(tempLeftHandMesh.Object);
-		leftHandMesh->SetRelativeLocationAndRotation(FVector(-3, -3.5, 4.5), FRotator(-25, -180, 90));
-	}
+	//if (tempLeftHandMesh.Succeeded())
+	//{
+	//	leftHandMesh->SetSkeletalMesh(tempLeftHandMesh.Object);
+	//	leftHandMesh->SetRelativeLocationAndRotation(FVector(-3, -3.5, 4.5), FRotator(-25, -180, 90));
+	//}
 
-	rightHandMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("RightHandMesh"));
-	rightHandMesh->SetupAttachment(rightMotionCtrl);
+	//rightHandMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("RightHandMesh"));
+	//rightHandMesh->SetupAttachment(rightMotionCtrl);
 
-	ConstructorHelpers::FObjectFinder<USkeletalMesh> tempRightHandMesh(TEXT("/Script/Engine.SkeletalMesh'/Game/Characters/MannequinsXR/Meshes/SKM_QuinnXR_right.SKM_QuinnXR_right'"));
+	//ConstructorHelpers::FObjectFinder<USkeletalMesh> tempRightHandMesh(TEXT("/Script/Engine.SkeletalMesh'/Game/Characters/MannequinsXR/Meshes/SKM_QuinnXR_right.SKM_QuinnXR_right'"));
 
-	if (tempRightHandMesh.Succeeded())
-	{
-		rightHandMesh->SetSkeletalMesh(tempRightHandMesh.Object);
-		rightHandMesh->SetRelativeLocationAndRotation(FVector(-3, 3.5, 4.5), FRotator(25, 0, 90));
-	}
+	//if (tempRightHandMesh.Succeeded())
+	//{
+	//	rightHandMesh->SetSkeletalMesh(tempRightHandMesh.Object);
+	//	rightHandMesh->SetRelativeLocationAndRotation(FVector(-3, 3.5, 4.5), FRotator(25, 0, 90));
+	//}
+
+	bReplicates = true;
 }
 
 // Called when the game starts or when spawned
@@ -61,19 +63,13 @@ void AVREnemyPlayer::BeginPlay()
 
 	//UHeadMountedDisplayFunctionLibrary::SetTrackingOrigin(EHMDTrackingOrigin::Eye);
 
-	APlayerController* playerController = Cast<APlayerController>(GetWorld()->GetFirstPlayerController());
-	if(playerController)
-	{
-		ULocalPlayer* localPlayer = playerController->GetLocalPlayer();
-		if (localPlayer)
-		{
-			UEnhancedInputLocalPlayerSubsystem* subSystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(localPlayer);
-			if(subSystem)
-			{
-				subSystem->AddMappingContext(IMC_VREnemyInput, 0);
-			}
-		}
-	}
+	//UE_LOG( LogTemp , Warning , TEXT( "beginplay" ) )
+
+	GetCharacterMovement()->MaxWalkSpeed = moveSpeed;
+
+	GetMesh()->SetScalarParameterValueOnMaterials( TEXT( "Power" ) , 10 );
+
+	bHasController = false;
 }
 
 // Called every frame
@@ -81,6 +77,29 @@ void AVREnemyPlayer::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	if(!bHasController)
+	{
+		APlayerController* playerController = Cast<APlayerController>( GetWorld()->GetFirstPlayerController() );
+		if (playerController)
+		{
+			ULocalPlayer* localPlayer = playerController->GetLocalPlayer();
+			if (localPlayer)
+			{
+				UEnhancedInputLocalPlayerSubsystem* subSystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>( localPlayer );
+				if (subSystem)
+				{
+					subSystem->AddMappingContext( IMC_VREnemyInput , 0 );
+					//bHasController = true;
+					UE_LOG( LogTemp , Warning , TEXT( "has controller" ))
+
+				}
+			}
+		}
+	}
+
+	FirstSkillActive();
+	SecondSkillActive();
+	ThirdSkillActive();
 }
 
 // Called to bind functionality to input
@@ -91,13 +110,13 @@ void AVREnemyPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 	auto inputSystem = CastChecked<UEnhancedInputComponent>(PlayerInputComponent);
 	if (inputSystem)
 	{
+		// InputComponents = inputSystem;
 		inputSystem->BindAction(IA_VREnemyMove, ETriggerEvent::Triggered, this, &AVREnemyPlayer::EnemyMove);
 		inputSystem->BindAction(IA_VREnemyLook, ETriggerEvent::Triggered, this, &AVREnemyPlayer::EnemyLook);
 
 		//inputSystem->BindAction(IA_EnemyInteraction, ETriggerEvent::Started, this, &AVREnemyPlayer::EInteractionStart);
-		//inputSystem->BindAction(IA_EnemyInteraction, ETriggerEvent::Ongoing, this, &AVREnemyPlayer::EInteractionOnGoing);
+		//inputSystem->BindAction(IA_EnemyInteraction, ETriggerEvent::Triggered, this, &AVREnemyPlayer::EInteractionOnGoing);
 		//inputSystem->BindAction(IA_EnemyInteraction, ETriggerEvent::Completed, this, &AVREnemyPlayer::EInteractionComplete);
-		
 	}
 }
 
@@ -107,6 +126,8 @@ void AVREnemyPlayer::EnemyMove(const FInputActionValue& value)
 
 	AddMovementInput(cameraComp->GetForwardVector(), movementVector.Y);
 	AddMovementInput(cameraComp->GetRightVector(), movementVector.X);
+
+	// UE_LOG(LogTemp, Warning, TEXT("EnemyMove %s"), *value.ToString())
 }
 
 void AVREnemyPlayer::EnemyLook(const FInputActionValue& value)
@@ -117,7 +138,44 @@ void AVREnemyPlayer::EnemyLook(const FInputActionValue& value)
 	{
 		AddControllerYawInput(lookVector.X);
 		AddControllerPitchInput(-lookVector.Y);
+
+		// UE_LOG( LogTemp , Warning , TEXT( "EnemyLook %s" ) , *value.ToString() )
 	}
+}
+
+void AVREnemyPlayer::FirstSkillActive()
+{
+	if (activeSkillTime == 10 && activeFirstSkill == false)
+	{
+		GetMesh()->SetScalarParameterValueOnMaterials( TEXT( "Power" ) , 7 );
+		addIBLockTime = 3;
+		activeFirstSkill = true;
+	}
+}
+
+void AVREnemyPlayer::SecondSkillActive()
+{
+	if(activeSkillTime == 20 && activeSecondSkill == false)
+	{
+		GetMesh()->SetScalarParameterValueOnMaterials( TEXT( "Power" ) , 5);
+		addIBLockTime = 5;
+		addEBLockTime = 3;
+		activeSecondSkill = true;
+	}
+}
+
+void AVREnemyPlayer::ThirdSkillActive()
+{
+	if (activeSkillTime == 30 && activeThirdSkill == false)
+	{
+		GetMesh()->SetScalarParameterValueOnMaterials( TEXT( "Power" ) , 3 );
+		addIBLockTime = 8;
+		addEBLockTime = 5;
+		addEscapeLockTime = 3;
+		GetCharacterMovement()->MaxWalkSpeed = 700;
+		activeThirdSkill = true;
+	}
+	
 }
 
 //void AVREnemyPlayer::EInteractionStart(const FInputActionValue& value)
@@ -132,7 +190,7 @@ void AVREnemyPlayer::EnemyLook(const FInputActionValue& value)
 //void AVREnemyPlayer::EInteractionOnGoing(const FInputActionValue& value)
 //{
 //	TArray<struct FOverlapResult> outOverlaps;
-//	// FVector pos = rightMotionCtrl->GetComponentLocation();
+//	//FVector pos = rightMotionCtrl->GetComponentLocation();
 //	FVector pos = GetActorLocation();
 //	FQuat rot = FQuat::Identity;
 //	FCollisionObjectQueryParams objectQueryParams( FCollisionObjectQueryParams::InitType::AllObjects );
