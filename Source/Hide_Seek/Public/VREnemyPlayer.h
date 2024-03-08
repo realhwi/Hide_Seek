@@ -69,7 +69,7 @@ private:
 	//void EInteractionStart(const FInputActionValue& value);
 
 	//UFUNCTION()
-	//void EInteractionOnGoing(const FInputActionValue& value);
+	//void EInteractionTriggered(const FInputActionValue& value);
 
 	//UFUNCTION()
 	//void EInteractionComplete(const FInputActionValue& value);
@@ -133,4 +133,7 @@ public:
 
 	UPROPERTY( EditAnywhere , BlueprintReadWrite )
 	float addEscapeLockTime;
+
+	UPROPERTY( EditAnywhere , BlueprintReadWrite )
+	bool isHandUP;
 };
