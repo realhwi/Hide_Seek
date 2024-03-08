@@ -372,40 +372,39 @@ void AHidePlayer::RightGrabbing()
 
 void AHidePlayer::PerformLineTrace()
 {
-	if (!RightController) // RightHandMesh가 초기화되었는지 확인
+	if (RightController && bIsTriggerPressed)
 	{
-		UE_LOG( LogTemp , Warning , TEXT( "RightHandMesh is not initialized." ) );
-		return;
-	}
+		FVector Start = RightController->GetComponentLocation(); // HandMesh 또는 HandController의 위치
+		FVector ForwardVector = RightController->GetForwardVector(); // HandMesh 또는 HandController의 전방 벡터
+		FVector DownVector = -RightController->GetUpVector(); // 컨트롤러의 위 방향의 반대
+		// ForwardVector와 DownVector를 조합하여 라인트레이스의 방향을 아래로
+		// 여기서는 ForwardVector의 90%와 DownVector의 10%를 조합
+		FVector Direction = ForwardVector * 0.9f + DownVector * 0.1f;
+		Direction.Normalize(); // 방향 벡터를 정규화합니다.
+		// 선의 길이를 5000으로 조정
+		FVector End = Start + ForwardVector * 1000;
+		FHitResult HitResult;
+		FCollisionQueryParams Params;
+		Params.AddIgnoredActor( this );
 
-	FVector Start = RightController->GetComponentLocation(); // HandMesh 또는 HandController의 위치
-	FVector ForwardVector = RightController->GetForwardVector(); // HandMesh 또는 HandController의 전방 벡터
-	FVector DownVector = -RightController->GetUpVector(); // 컨트롤러의 위 방향의 반대
-	// ForwardVector와 DownVector를 조합하여 라인트레이스의 방향을 아래로
-	// 여기서는 ForwardVector의 90%와 DownVector의 10%를 조합
-	FVector Direction = ForwardVector * 0.9f + DownVector * 0.1f;
-	Direction.Normalize(); // 방향 벡터를 정규화합니다.
-	// 선의 길이를 5000으로 조정
-	FVector End = Start + ForwardVector * 1000; 
-	FHitResult HitResult;
-	FCollisionQueryParams Params;
-	Params.AddIgnoredActor( this );
-
-	if (GetWorld()->LineTraceSingleByChannel( HitResult , Start , End , ECC_Visibility , Params ))
-	{
-		DrawDebugLine( GetWorld() , Start , HitResult.ImpactPoint , FColor::Red , false , 0 , 0 , 0.1 );
-		
-		// 여기서 충돌된 액터가 AInteraction 클래스의 인스턴스인지 확인
-		AInteraction* InteractionActor = Cast<AInteraction>( HitResult.GetActor() );
-		if (InteractionActor)
+		if (GetWorld()->LineTraceSingleByChannel( HitResult , Start , End , ECC_Visibility , Params ))
 		{
-			// 인터렉션 액터와 상호작용 처리를 수행하는 함수를 호출
-			OnTriggerInteract( InteractionActor );
+			DrawDebugLine( GetWorld() , Start , HitResult.ImpactPoint , FColor::Red , false , 0 , 0 , 0.1 );
+
+			// 여기서 충돌된 액터가 AInteraction 클래스의 인스턴스인지 확인
+			AInteraction* InteractionActor = Cast<AInteraction>( HitResult.GetActor() );
+			if (InteractionActor)
+			{
+				// 인터렉션 액터와 상호작용 처리를 수행하는 함수를 호출
+				OnTriggerInteract( InteractionActor );
+				bHasInteracted = true;
+			}
 		}
-	}
-	else
-	{
-		DrawDebugLine( GetWorld() , Start , End , FColor::Red , false , 0 , 0 , 0.1 );
+		else
+		{
+			DrawDebugLine( GetWorld() , Start , End , FColor::Red , false , 0 , 0 , 0.1 );
+		}
+
 	}
 }
 
@@ -457,14 +456,25 @@ void AHidePlayer::OnLifeDepleted()
 	}
 }
 
+void AHidePlayer::UpdateTriggerStatus(bool bPressed)
+{
+	// 트리거 버튼 상태 업데이트
+	bIsTriggerPressed = bPressed;
+	if (!bPressed)
+	{
+		// 버튼이 눌리지 않았을 때는 상호작용 상태를 리셋
+		bHasInteracted = false;
+	}
+}
+
 
 void AHidePlayer::OnActionTrigger()
 {
 	UE_LOG( LogTemp , Warning , TEXT( "Trigger" ) );
 
 	bIsTrigger = true;
-
-
+	bIsTriggerPressed =true;
+	bHasInteracted = false; // 트리거를 다시 누를 때마다 상호작용을 리셋
 }
 
 void AHidePlayer::OnActionUnTrigger()
@@ -472,6 +482,7 @@ void AHidePlayer::OnActionUnTrigger()
 	UE_LOG( LogTemp , Warning , TEXT( "UnTrigger" ) );
 
 	bIsTrigger = false;
+	bIsTriggerPressed = false;
 }
 
 
