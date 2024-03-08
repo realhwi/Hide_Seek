@@ -32,7 +32,7 @@ public:
 	virtual void OnConstruction(const FTransform& Transform) override;
 
 	UPROPERTY(EditAnywhere)
-	float Movespeed = 400;
+	float Movespeed = 300;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputMappingContext* IMC_JHVRInput;
