@@ -8,6 +8,7 @@
 #include "HeadMountedDisplayFunctionLibrary.h"
 #include "MotionControllerComponent.h"
 #include "Camera/CameraComponent.h"
+#include "Components/CapsuleComponent.h"
 #include "Components/SphereComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/KismetSystemLibrary.h"
@@ -18,6 +19,8 @@ AVREnemyPlayer::AVREnemyPlayer()
 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
+	GetCapsuleComponent()->InitCapsuleSize( 42.f , 96.0f );
+
 	cameraComp = CreateDefaultSubobject<UCameraComponent>(TEXT("CameraComp"));
 	cameraComp->SetupAttachment(GetRootComponent());
 	cameraComp->bUsePawnControlRotation = true;
@@ -25,11 +28,13 @@ AVREnemyPlayer::AVREnemyPlayer()
 
 	leftMotionCtrl = CreateDefaultSubobject<UMotionControllerComponent>(TEXT("LeftMotionCtrl"));
 	leftMotionCtrl->SetupAttachment(GetRootComponent());
-	leftMotionCtrl->SetTrackingMotionSource(FName("Left"));
+	leftMotionCtrl->SetTrackingSource( EControllerHand::Left );
+	//leftMotionCtrl->SetTrackingMotionSource(FName("Left"));
 
 	rightMotionCtrl = CreateDefaultSubobject<UMotionControllerComponent>(TEXT("RightMotionCtrl"));
 	rightMotionCtrl->SetupAttachment(GetRootComponent());
-	rightMotionCtrl->SetTrackingMotionSource(FName("Right"));
+	rightMotionCtrl->SetTrackingSource( EControllerHand::Right );
+	//rightMotionCtrl->SetTrackingMotionSource(FName("Right"));
 
 	//leftHandMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("LeftHandMesh"));
 	//leftHandMesh->SetupAttachment(leftMotionCtrl);
@@ -39,7 +44,8 @@ AVREnemyPlayer::AVREnemyPlayer()
 	//if (tempLeftHandMesh.Succeeded())
 	//{
 	//	leftHandMesh->SetSkeletalMesh(tempLeftHandMesh.Object);
-	//	leftHandMesh->SetRelativeLocationAndRotation(FVector(-3, -3.5, 4.5), FRotator(-25, -180, 90));
+	//	//leftHandMesh->SetRelativeLocationAndRotation(FVector(-3, -3.5, 4.5), FRotator(-25, -180, 90));
+	//	leftHandMesh->SetRelativeLocationAndRotation( FVector( -3 , -3.5 , 4.5 ) , FRotator(  0, 0 ,0  ) );
 	//}
 
 	//rightHandMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("RightHandMesh"));
@@ -50,7 +56,7 @@ AVREnemyPlayer::AVREnemyPlayer()
 	//if (tempRightHandMesh.Succeeded())
 	//{
 	//	rightHandMesh->SetSkeletalMesh(tempRightHandMesh.Object);
-	//	rightHandMesh->SetRelativeLocationAndRotation(FVector(-3, 3.5, 4.5), FRotator(25, 0, 90));
+	//	// rightHandMesh->SetRelativeLocationAndRotation(FVector(-3, 3.5, 4.5), FRotator(25, 0, 90));
 	//}
 
 	bReplicates = true;
@@ -61,7 +67,7 @@ void AVREnemyPlayer::BeginPlay()
 {
 	Super::BeginPlay();
 
-	//UHeadMountedDisplayFunctionLibrary::SetTrackingOrigin(EHMDTrackingOrigin::Eye);
+	UHeadMountedDisplayFunctionLibrary::SetTrackingOrigin(EHMDTrackingOrigin::Floor);
 
 	//UE_LOG( LogTemp , Warning , TEXT( "beginplay" ) )
 
@@ -79,6 +85,7 @@ void AVREnemyPlayer::Tick(float DeltaTime)
 
 	if(!bHasController)
 	{
+
 		APlayerController* playerController = Cast<APlayerController>( GetWorld()->GetFirstPlayerController() );
 		if (playerController)
 		{
@@ -100,6 +107,8 @@ void AVREnemyPlayer::Tick(float DeltaTime)
 	FirstSkillActive();
 	SecondSkillActive();
 	ThirdSkillActive();
+
+
 }
 
 // Called to bind functionality to input
@@ -124,8 +133,15 @@ void AVREnemyPlayer::EnemyMove(const FInputActionValue& value)
 {
 	FVector2D movementVector = value.Get<FVector2D>();
 
-	AddMovementInput(cameraComp->GetForwardVector(), movementVector.Y);
-	AddMovementInput(cameraComp->GetRightVector(), movementVector.X);
+	FVector ForwardVector = cameraComp->GetForwardVector();
+	FVector RightVector = cameraComp->GetRightVector();
+
+	FVector movementDirection = ForwardVector * movementVector.Y + RightVector * movementVector.X;
+
+	AddMovementInput( movementDirection , 25.0f );
+
+	//AddMovementInput(cameraComp->GetForwardVector(), movementVector.Y);
+	//AddMovementInput(cameraComp->GetRightVector(), movementVector.X);
 
 	// UE_LOG(LogTemp, Warning, TEXT("EnemyMove %s"), *value.ToString())
 }
@@ -183,11 +199,10 @@ void AVREnemyPlayer::ThirdSkillActive()
 //	moveSpeed = 400;
 //
 //	FVector loc = GetActorLocation() + FVector( 0 , 100 , 0 );
-//
 //	DrawDebugString( GetWorld() , loc , TEXT( "Player" ) , this , FColor::Black , 5 , false , 1 );
 //}
 //
-//void AVREnemyPlayer::EInteractionOnGoing(const FInputActionValue& value)
+//void AVREnemyPlayer::EInteractionTriggered(const FInputActionValue& value)
 //{
 //	TArray<struct FOverlapResult> outOverlaps;
 //	//FVector pos = rightMotionCtrl->GetComponentLocation();
