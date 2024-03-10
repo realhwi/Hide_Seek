@@ -14,6 +14,7 @@
 #include "PlayerUI.h"
 #include "GameOver.h"
 #include "VREnemyPlayer.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
 
 class UWidgetComponent;
@@ -23,12 +24,13 @@ AHidePlayer::AHidePlayer()
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
-	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
+	// GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
 
 	//camera Comp
 	CameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("CameraComponent"));
 	CameraComponent->SetupAttachment(GetRootComponent());
 	CameraComponent->bUsePawnControlRotation = false;
+	CameraComponent->Mobility = EComponentMobility::Movable;
 	CameraComponent->SetRelativeLocation(FVector(0, 0, 90));
 
 	//MotionController
@@ -144,6 +146,8 @@ void AHidePlayer::Tick(float DeltaTime)
 	{
 		PerformLineTrace();
 	}
+
+	UpdateMovementSpeed();
 }
 
 // Called to bind functionality to input
@@ -160,6 +164,10 @@ void AHidePlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 		InputSystem->BindAction(IA_Grab, ETriggerEvent::Completed, this, &AHidePlayer::OnActionUnGrab );
 		InputSystem->BindAction(IA_Trigger, ETriggerEvent::Started, this, &AHidePlayer::OnActionTrigger);
 		InputSystem->BindAction(IA_Trigger, ETriggerEvent::Completed, this, &AHidePlayer::OnActionUnTrigger);
+		InputSystem->BindAction(IA_Run , ETriggerEvent::Started , this , &AHidePlayer::ONIARun );
+		InputSystem->BindAction(IA_Run , ETriggerEvent::Completed , this , &AHidePlayer::ONIAUnRun );
+		InputSystem->BindAction(IA_Crouch , ETriggerEvent::Started , this , &AHidePlayer::OnIACrouch );
+		InputSystem->BindAction(IA_Crouch , ETriggerEvent::Completed , this , &AHidePlayer::OnIAUnCrouch );
 	}
 }
 
@@ -182,7 +190,7 @@ void AHidePlayer::Move(const FInputActionValue& Value)
 	FVector MovementDirection = ForwardVector * MovementVector.Y + RightVector * MovementVector.X;
 
 	// 이동 입력을 추가
-	AddMovementInput(MovementDirection, 25.0f); 
+	AddMovementInput(MovementDirection, 25.0f);
 
 	//PC 일때 사용
 	/*AddMovementInput( GetActorForwardVector() , MovementVector.X );
@@ -209,6 +217,43 @@ void AHidePlayer::Look(const FInputActionValue& Value)
 
 	UE_LOG(LogTemp, Warning, TEXT("Thumbstick Look: %s"), *LookAxisVector.ToString());
 
+}
+
+void AHidePlayer::OnIACrouch(const FInputActionValue& Value)
+{
+	GetCharacterMovement()->Crouch();
+	isCrouched = true;
+	UE_LOG( LogTemp , Warning , TEXT( "Crouch Action Triggered: %s" ) , Value.Get<bool>() ? TEXT( "True" ) : TEXT( "False" ) );
+}
+
+void AHidePlayer::OnIAUnCrouch(const FInputActionValue& Value)
+{
+	GetCharacterMovement()->UnCrouch();
+	isCrouched = false;
+}
+
+
+void AHidePlayer::ONIARun(const FInputActionValue& Value)
+{
+	UE_LOG( LogTemp , Warning , TEXT( "Crouch Action Triggered: %s" ) , Value.Get<bool>() ? TEXT( "True" ) : TEXT( "False" ) );
+	bIsRun = true;
+}
+
+void AHidePlayer::ONIAUnRun(const FInputActionValue& Value)
+{
+	bIsRun = false;
+}
+
+void AHidePlayer::UpdateMovementSpeed()
+{
+	if (bIsRun)
+	{
+		GetCharacterMovement()->MaxWalkSpeed = 600;
+	}
+	else
+	{
+		GetCharacterMovement()->MaxWalkSpeed = 300;
+	}
 }
 
 bool AHidePlayer::IsTrigger() const
@@ -324,7 +369,7 @@ void AHidePlayer::OnActionUnGrab()
 	GrabbedObject->SetCollisionEnabled( ECollisionEnabled::QueryAndPhysics );
 
 	//던지기 힘 10%만 사용 
-	float ReducedThrowStrength = ThrowStrength * 1.0f;
+	float ReducedThrowStrength = ThrowStrength * 2.0f;
 	GrabbedObject->AddForce( ThrowDirection * ThrowStrength * GrabbedObject->GetMass() );
 
 	// 물건을 회전하기, 회전 10%만 사용
@@ -332,7 +377,7 @@ void AHidePlayer::OnActionUnGrab()
 	//저장한 Quaternion인 Delta 회전값에서 Axis and Angle 추출하기
 	DeltaRotation.ToAxisAndAngle( Axis , Angle );
 
-	float ReducedTorquePower = TorquePower * 1.0f;
+	float ReducedTorquePower = TorquePower * 2.0f;
 	FVector AngularVelocity = Axis * FMath::DegreesToRadians( Angle ) / GetWorld()->DeltaTimeSeconds;
 	GrabbedObject->SetPhysicsAngularVelocityInRadians( AngularVelocity * ReducedTorquePower , true );
 
@@ -372,14 +417,14 @@ void AHidePlayer::RightGrabbing()
 
 void AHidePlayer::PerformLineTrace()
 {
-	if (RightController && bIsTriggerPressed)
+	if (RightController && bIsTrigger)
 	{
 		FVector Start = RightController->GetComponentLocation(); // HandMesh 또는 HandController의 위치
 		FVector ForwardVector = RightController->GetForwardVector(); // HandMesh 또는 HandController의 전방 벡터
 		FVector DownVector = -RightController->GetUpVector(); // 컨트롤러의 위 방향의 반대
 		// ForwardVector와 DownVector를 조합하여 라인트레이스의 방향을 아래로
 		// 여기서는 ForwardVector의 90%와 DownVector의 10%를 조합
-		FVector Direction = ForwardVector * 0.9f + DownVector * 0.1f;
+		FVector Direction = ForwardVector * 0.8f + DownVector * 0.2f;
 		Direction.Normalize(); // 방향 벡터를 정규화합니다.
 		// 선의 길이를 5000으로 조정
 		FVector End = Start + ForwardVector * 1000;
@@ -409,7 +454,7 @@ void AHidePlayer::PerformLineTrace()
 }
 
 void AHidePlayer::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
-	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+                                 UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	if (OtherActor != nullptr && OtherActor != this && OtherActor->IsA( AVREnemyPlayer::StaticClass() ))
 	{
@@ -459,7 +504,7 @@ void AHidePlayer::OnLifeDepleted()
 void AHidePlayer::UpdateTriggerStatus(bool bPressed)
 {
 	// 트리거 버튼 상태 업데이트
-	bIsTriggerPressed = bPressed;
+	bIsTrigger = bPressed;
 	if (!bPressed)
 	{
 		// 버튼이 눌리지 않았을 때는 상호작용 상태를 리셋
@@ -473,7 +518,7 @@ void AHidePlayer::OnActionTrigger()
 	UE_LOG( LogTemp , Warning , TEXT( "Trigger" ) );
 
 	bIsTrigger = true;
-	bIsTriggerPressed =true;
+	/*bIsTriggerPressed =true;*/
 	bHasInteracted = false; // 트리거를 다시 누를 때마다 상호작용을 리셋
 }
 
@@ -482,7 +527,7 @@ void AHidePlayer::OnActionUnTrigger()
 	UE_LOG( LogTemp , Warning , TEXT( "UnTrigger" ) );
 
 	bIsTrigger = false;
-	bIsTriggerPressed = false;
+	//bIsTriggerPressed = false;
 }
 
 

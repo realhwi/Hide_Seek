@@ -31,8 +31,8 @@ public:
 
 	virtual void OnConstruction(const FTransform& Transform) override;
 
-	UPROPERTY(EditAnywhere)
-	float Movespeed = 300;
+	//UPROPERTY(EditAnywhere)
+	//float Movespeed = 300;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputMappingContext* IMC_JHVRInput;
@@ -45,6 +45,10 @@ public:
 	class UInputAction* IA_Grab;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* IA_Trigger;
+	UPROPERTY( EditAnywhere , BlueprintReadOnly , Category = Input , meta = (AllowPrivateAccess = "true") )
+	class UInputAction* IA_Run;
+	UPROPERTY( EditAnywhere , BlueprintReadOnly , Category = Input , meta = (AllowPrivateAccess = "true") )
+	class UInputAction* IA_Crouch;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Settings | Player")
 	class UCameraComponent* CameraComponent;
@@ -114,7 +118,29 @@ public:
 	UFUNCTION()
 	void PerformLineTrace();
 
+	UFUNCTION()
+	void OnIACrouch( const FInputActionValue& Value );
 
+	UFUNCTION()
+	void OnIAUnCrouch( const FInputActionValue& Value );
+
+	// 쑤그리기 
+	UPROPERTY( EditAnywhere , BlueprintReadWrite )
+	bool isCrouched;
+
+	UFUNCTION()
+	void ONIARun( const FInputActionValue& Value );
+
+	UFUNCTION()
+	void ONIAUnRun( const FInputActionValue& Value );
+
+	UFUNCTION()
+	void UpdateMovementSpeed();
+
+	bool bIsRun = false;
+
+
+	/*인터렉션 관련 기능들*/
 	//Grab된 물건의 Component
 	UPROPERTY()
 	class UPrimitiveComponent* GrabbedObject;
@@ -177,8 +203,8 @@ public:
 	// 인터렉션 실행 감지
 	UPROPERTY(EditAnywhere)
 	bool bHasInteracted = false;
-	UPROPERTY( EditAnywhere )
-	bool bIsTriggerPressed = false;
+	/*UPROPERTY( EditAnywhere )
+	bool bIsTriggerPressed = false;*/
 
 	void UpdateTriggerStatus( bool bPressed );
 
