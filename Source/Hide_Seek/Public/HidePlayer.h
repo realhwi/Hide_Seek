@@ -203,8 +203,6 @@ public:
 	// 인터렉션 실행 감지
 	UPROPERTY(EditAnywhere)
 	bool bHasInteracted = false;
-	/*UPROPERTY( EditAnywhere )
-	bool bIsTriggerPressed = false;*/
 
 	void UpdateTriggerStatus( bool bPressed );
 
