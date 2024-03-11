@@ -72,6 +72,9 @@ private:
 	UFUNCTION()
 	void Look(const FInputActionValue& Value);
 
+	UPROPERTY( Transient )
+	UPrimitiveComponent* GrabbedComponent; // 현재 잡고 있는 컴포넌트
+
 public:
 
 	// 상호작용 액터
@@ -96,6 +99,9 @@ public:
 	//Grab Input 버튼 땔때 실행됨 
 	UFUNCTION( BlueprintCallable, Category = "Interaction" )
 	void OnActionUnGrab();
+
+	UFUNCTION()
+	void ProcessGrab( UPrimitiveComponent* Component , AActor* Actor );
 
 	//Tick에서 실행됨
 	//만약에 bIsGrabbed이 True면 프레임마다 호출됨
@@ -139,18 +145,22 @@ public:
 
 	bool bIsRun = false;
 
+public:
 
 	/*인터렉션 관련 기능들*/
 	//Grab된 물건의 Component
 	UPROPERTY()
 	class UPrimitiveComponent* GrabbedObject;
 
+	AActor* GrabbedActor;
+
 	//던지는 방향
 	FVector ThrowDirection;
+	FVector PreviousGrabLocation;
 
 	//던질때 힘
 	UPROPERTY(EditAnywhere, Category = "Grab", meta = (AllowPrivateAccess = true))
-	float ThrowStrength = 10;
+	float ThrowStrength;
 
 	//Grab위치를 실시간으로 업데이트 해야하기 때문에 여기다가 저장함
 	FVector PreviousGrabPosition;
@@ -158,6 +168,7 @@ public:
 	FQuat PreviousGrabRotation;
 	//회전 변화량
 	FQuat DeltaRotation;
+	
 
 	//회전 힘
 	UPROPERTY(EditAnywhere, Category = "Grab", meta = (AllowPrivateAccess = true))
