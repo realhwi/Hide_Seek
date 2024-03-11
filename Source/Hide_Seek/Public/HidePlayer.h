@@ -90,11 +90,11 @@ public:
 	float GrabRange = 50;
 
 	//Grab Input 버튼 누를때 실행됨
-	UFUNCTION()
+	UFUNCTION( BlueprintCallable, Category = "Interaction" )
 	void OnActionTryGrab();
 
 	//Grab Input 버튼 땔때 실행됨 
-	UFUNCTION()
+	UFUNCTION( BlueprintCallable, Category = "Interaction" )
 	void OnActionUnGrab();
 
 	//Tick에서 실행됨
