@@ -5,6 +5,8 @@
 #include <EnhancedInputComponent.h>
 #include <EnhancedInputSubsystems.h>
 #include <InputActionValue.h>
+
+#include "Cable.h"
 #include "Components/CapsuleComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Engine/LocalPlayer.h"
@@ -14,6 +16,7 @@
 #include "PlayerUI.h"
 #include "GameOver.h"
 #include "VREnemyPlayer.h"
+#include "Components/SphereComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
 
@@ -21,26 +24,26 @@ class UWidgetComponent;
 // Sets default values
 AHidePlayer::AHidePlayer()
 {
- 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
+	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
-	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
+	GetCapsuleComponent()->InitCapsuleSize( 42.f , 96.0f );
 
 	//camera Comp
-	CameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("CameraComponent"));
-	CameraComponent->SetupAttachment(GetRootComponent());
+	CameraComponent = CreateDefaultSubobject<UCameraComponent>( TEXT( "CameraComponent" ) );
+	CameraComponent->SetupAttachment( GetRootComponent() );
 	CameraComponent->bUsePawnControlRotation = false;
 	CameraComponent->Mobility = EComponentMobility::Movable;
-	CameraComponent->SetRelativeLocation(FVector(0, 0, 90));
+	CameraComponent->SetRelativeLocation( FVector( 0 , 0 , 90 ) );
 
 	//MotionController
-	LeftController = CreateDefaultSubobject<UMotionControllerComponent>(TEXT("Left Controller"));
-	LeftController->SetupAttachment(GetRootComponent());
-	LeftController->SetTrackingSource( EControllerHand::Left);
+	LeftController = CreateDefaultSubobject<UMotionControllerComponent>( TEXT( "Left Controller" ) );
+	LeftController->SetupAttachment( GetRootComponent() );
+	LeftController->SetTrackingSource( EControllerHand::Left );
 	// LeftController->SetTrackingMotionSource(FName("Left"));
 
-	RightController = CreateDefaultSubobject<UMotionControllerComponent>(TEXT("Right Controller"));
-	RightController->SetupAttachment(GetRootComponent());
+	RightController = CreateDefaultSubobject<UMotionControllerComponent>( TEXT( "Right Controller" ) );
+	RightController->SetupAttachment( GetRootComponent() );
 	RightController->SetTrackingSource( EControllerHand::Right );
 	// RightController->SetTrackingMotionSource(FName("Right"));
 
@@ -48,25 +51,25 @@ AHidePlayer::AHidePlayer()
 	GetMesh()->SetRelativeLocation( FVector( 0.0f , 0.0f , 0.0f ) ); // 이 값은 실제 필요한 값으로 조정해야 합니다.
 
 	//Hand Mesh
-	LeftHandMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Left Hand Mesh"));
+	LeftHandMesh = CreateDefaultSubobject<UStaticMeshComponent>( TEXT( "Left Hand Mesh" ) );
 	LeftHandMesh->AttachToComponent( GetMesh() , FAttachmentTransformRules::SnapToTargetIncludingScale , TEXT( "hand_lPoint" ) );
 	// LeftHandMesh->SetupAttachment(LeftController);
 
-	RightHandMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Right Hand Mesh"));
+	RightHandMesh = CreateDefaultSubobject<UStaticMeshComponent>( TEXT( "Right Hand Mesh" ) );
 	RightHandMesh->AttachToComponent( GetMesh() , FAttachmentTransformRules::SnapToTargetIncludingScale , TEXT( "hand_rPoint" ) );
 	// RightHandMesh->SetupAttachment(RightController);
 
-	static ConstructorHelpers::FObjectFinder<UStaticMesh> LeftMeshFinder(TEXT("/Script/Engine.StaticMesh'/Game/JH/Models/left_OculusTouch_v2Controller.left_OculusTouch_v2Controller'"));
+	static ConstructorHelpers::FObjectFinder<UStaticMesh> LeftMeshFinder( TEXT( "/Script/Engine.StaticMesh'/Game/JH/Models/left_OculusTouch_v2Controller.left_OculusTouch_v2Controller'" ) );
 	if (LeftMeshFinder.Succeeded())
 	{
-		LeftHandMesh->SetStaticMesh(LeftMeshFinder.Object);
+		LeftHandMesh->SetStaticMesh( LeftMeshFinder.Object );
 	}
-	
+
 	// Find and attach the static mesh for RightHandMesh
-	static ConstructorHelpers::FObjectFinder<UStaticMesh> RightMeshFinder(TEXT("/Script/Engine.StaticMesh'/Game/JH/Models/right_OculusTouch_v2Controller.right_OculusTouch_v2Controller'"));
+	static ConstructorHelpers::FObjectFinder<UStaticMesh> RightMeshFinder( TEXT( "/Script/Engine.StaticMesh'/Game/JH/Models/right_OculusTouch_v2Controller.right_OculusTouch_v2Controller'" ) );
 	if (RightMeshFinder.Succeeded())
 	{
-		RightHandMesh->SetStaticMesh(RightMeshFinder.Object);
+		RightHandMesh->SetStaticMesh( RightMeshFinder.Object );
 	}
 
 	// LeftController 오버랩 이벤트 활성화
@@ -76,7 +79,7 @@ AHidePlayer::AHidePlayer()
 	LeftController->SetCollisionResponseToChannel( ECC_Pawn , ECR_Overlap );
 
 	// 캡슐 컴포넌트 콜리전 설정
-	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	GetCapsuleComponent()->SetCollisionEnabled( ECollisionEnabled::QueryOnly );
 	GetCapsuleComponent()->SetCollisionResponseToChannel( ECollisionChannel::ECC_Pawn , ECollisionResponse::ECR_Overlap );
 
 	/*if(GetMesh())
@@ -92,8 +95,8 @@ void AHidePlayer::BeginPlay()
 {
 	Super::BeginPlay();
 
-	
-	APlayerController* Playercontroller = Cast<APlayerController>(GetWorld()->GetFirstPlayerController());
+
+	APlayerController* Playercontroller = Cast<APlayerController>( GetWorld()->GetFirstPlayerController() );
 
 	// 위젯 인스턴스 생성 및 화면에 추가
 	if (playerUIFactory)
@@ -124,10 +127,10 @@ void AHidePlayer::BeginPlay()
 		ULocalPlayer* LocalPlayer = Playercontroller->GetLocalPlayer();
 		if (LocalPlayer)
 		{
-			UEnhancedInputLocalPlayerSubsystem* SubSystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(LocalPlayer);
+			UEnhancedInputLocalPlayerSubsystem* SubSystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>( LocalPlayer );
 			if (SubSystem)
 			{
-				SubSystem->AddMappingContext(IMC_JHVRInput, 0);
+				SubSystem->AddMappingContext( IMC_JHVRInput , 0 );
 			}
 		}
 	}
@@ -136,12 +139,12 @@ void AHidePlayer::BeginPlay()
 }
 
 // Called every frame
-void AHidePlayer::Tick(float DeltaTime)
+void AHidePlayer::Tick( float DeltaTime )
 {
-	Super::Tick(DeltaTime);
+	Super::Tick( DeltaTime );
 
 	RightGrabbing();
-	
+
 	if (bIsTrigger)
 	{
 		PerformLineTrace();
@@ -151,32 +154,32 @@ void AHidePlayer::Tick(float DeltaTime)
 }
 
 // Called to bind functionality to input
-void AHidePlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
+void AHidePlayer::SetupPlayerInputComponent( UInputComponent* PlayerInputComponent )
 {
-	Super::SetupPlayerInputComponent(PlayerInputComponent);
+	Super::SetupPlayerInputComponent( PlayerInputComponent );
 
-	auto InputSystem = CastChecked<UEnhancedInputComponent>(PlayerInputComponent);
+	auto InputSystem = CastChecked<UEnhancedInputComponent>( PlayerInputComponent );
 	if (InputSystem)
 	{
-		InputSystem->BindAction(IA_Move, ETriggerEvent::Triggered, this, &AHidePlayer::Move);
-		InputSystem->BindAction(IA_Look, ETriggerEvent::Triggered, this, &AHidePlayer::Look);
-		InputSystem->BindAction(IA_Grab, ETriggerEvent::Started, this, &AHidePlayer::OnActionTryGrab );
-		InputSystem->BindAction(IA_Grab, ETriggerEvent::Completed, this, &AHidePlayer::OnActionUnGrab );
-		InputSystem->BindAction(IA_Trigger, ETriggerEvent::Started, this, &AHidePlayer::OnActionTrigger);
-		InputSystem->BindAction(IA_Trigger, ETriggerEvent::Completed, this, &AHidePlayer::OnActionUnTrigger);
-		InputSystem->BindAction(IA_Run , ETriggerEvent::Started , this , &AHidePlayer::ONIARun );
-		InputSystem->BindAction(IA_Run , ETriggerEvent::Completed , this , &AHidePlayer::ONIAUnRun );
-		InputSystem->BindAction(IA_Crouch , ETriggerEvent::Started , this , &AHidePlayer::OnIACrouch );
-		InputSystem->BindAction(IA_Crouch , ETriggerEvent::Completed , this , &AHidePlayer::OnIAUnCrouch );
+		InputSystem->BindAction( IA_Move , ETriggerEvent::Triggered , this , &AHidePlayer::Move );
+		InputSystem->BindAction( IA_Look , ETriggerEvent::Triggered , this , &AHidePlayer::Look );
+		InputSystem->BindAction( IA_Grab , ETriggerEvent::Started , this , &AHidePlayer::OnActionTryGrab );
+		InputSystem->BindAction( IA_Grab , ETriggerEvent::Completed , this , &AHidePlayer::OnActionUnGrab );
+		InputSystem->BindAction( IA_Trigger , ETriggerEvent::Started , this , &AHidePlayer::OnActionTrigger );
+		InputSystem->BindAction( IA_Trigger , ETriggerEvent::Completed , this , &AHidePlayer::OnActionUnTrigger );
+		InputSystem->BindAction( IA_Run , ETriggerEvent::Started , this , &AHidePlayer::ONIARun );
+		InputSystem->BindAction( IA_Run , ETriggerEvent::Completed , this , &AHidePlayer::ONIAUnRun );
+		InputSystem->BindAction( IA_Crouch , ETriggerEvent::Started , this , &AHidePlayer::OnIACrouch );
+		InputSystem->BindAction( IA_Crouch , ETriggerEvent::Completed , this , &AHidePlayer::OnIAUnCrouch );
 	}
 }
 
-void AHidePlayer::OnConstruction(const FTransform& Transform)
+void AHidePlayer::OnConstruction( const FTransform& Transform )
 {
-	Super::OnConstruction(Transform);
+	Super::OnConstruction( Transform );
 }
 
-void AHidePlayer::Move(const FInputActionValue& Value)
+void AHidePlayer::Move( const FInputActionValue& Value )
 {
 	UE_LOG( LogTemp , Warning , TEXT( "Try" ) );
 
@@ -190,7 +193,7 @@ void AHidePlayer::Move(const FInputActionValue& Value)
 	FVector MovementDirection = ForwardVector * MovementVector.Y + RightVector * MovementVector.X;
 
 	// 이동 입력을 추가
-	AddMovementInput(MovementDirection, 25.0f);
+	AddMovementInput( MovementDirection , 25.0f );
 
 	//PC 일때 사용
 	/*AddMovementInput( GetActorForwardVector() , MovementVector.X );
@@ -202,44 +205,44 @@ void AHidePlayer::Move(const FInputActionValue& Value)
 	AddMovementInput(CameraComponent->GetRightVector(), MovementVector.Y);*/
 }
 
-void AHidePlayer::Look(const FInputActionValue& Value)
+void AHidePlayer::Look( const FInputActionValue& Value )
 {
 
 	FVector2D LookAxisVector = Value.Get<FVector2D>();
 
-	if(Controller != nullptr)
+	if (Controller != nullptr)
 	{
 		/*CameraComponent->bUsePawnControlRotation = true;*/
 
-		AddControllerYawInput(LookAxisVector.X);
-		AddControllerPitchInput(-LookAxisVector.Y);
+		AddControllerYawInput( LookAxisVector.X );
+		AddControllerPitchInput( -LookAxisVector.Y );
 	}
 
-	UE_LOG(LogTemp, Warning, TEXT("Thumbstick Look: %s"), *LookAxisVector.ToString());
+	UE_LOG( LogTemp , Warning , TEXT( "Thumbstick Look: %s" ) , *LookAxisVector.ToString() );
 
 }
 
-void AHidePlayer::OnIACrouch(const FInputActionValue& Value)
+void AHidePlayer::OnIACrouch( const FInputActionValue& Value )
 {
 	GetCharacterMovement()->Crouch();
 	isCrouched = true;
 	UE_LOG( LogTemp , Warning , TEXT( "Crouch Action Triggered: %s" ) , Value.Get<bool>() ? TEXT( "True" ) : TEXT( "False" ) );
 }
 
-void AHidePlayer::OnIAUnCrouch(const FInputActionValue& Value)
+void AHidePlayer::OnIAUnCrouch( const FInputActionValue& Value )
 {
 	GetCharacterMovement()->UnCrouch();
 	isCrouched = false;
 }
 
 
-void AHidePlayer::ONIARun(const FInputActionValue& Value)
+void AHidePlayer::ONIARun( const FInputActionValue& Value )
 {
 	UE_LOG( LogTemp , Warning , TEXT( "Crouch Action Triggered: %s" ) , Value.Get<bool>() ? TEXT( "True" ) : TEXT( "False" ) );
 	bIsRun = true;
 }
 
-void AHidePlayer::ONIAUnRun(const FInputActionValue& Value)
+void AHidePlayer::ONIAUnRun( const FInputActionValue& Value )
 {
 	bIsRun = false;
 }
@@ -267,119 +270,178 @@ bool AHidePlayer::IsGrab() const
 	return bIsGrabbed;
 }
 
-void AHidePlayer::OnTriggerInteract(AInteraction* InteractionActor)
+void AHidePlayer::OnTriggerInteract( AInteraction* InteractionActor )
 {
 	InteractionActor->OnTriggerInteract( this );
 }
 
-void AHidePlayer::OnGrabInteract(AInteraction* InteractionActor)
+void AHidePlayer::OnGrabInteract( AInteraction* InteractionActor )
 {
 	InteractionActor->OnGrabInteract( this );
 }
 
-
-void AHidePlayer::ProcessGrab( UPrimitiveComponent* Component , AActor* Actor )
-{
-	if (Component && Actor) {
-		// 컴포넌트를 RightController에 부착
-		Component->AttachToComponent( RightController , FAttachmentTransformRules::SnapToTargetNotIncludingScale );
-		Component->SetSimulatePhysics( false );
-		Component->SetCollisionEnabled( ECollisionEnabled::NoCollision );
-
-		// 액터와 상호작용하는 로직 (예: 상호작용 인터페이스 호출)
-		if (Actor->Implements<UInteractable>()) {
-			IInteractable::Execute_Interact( Actor , this );
-		}
-
-		// 그랩 상태 설정
-		bIsGrabbed = true;
-		GrabbedComponent = Component;
-		GrabbedActor = Actor; // 필요에 따라 그랩한 액터를 저장
-
-		UE_LOG( LogTemp , Warning , TEXT( "Object grabbed successfully." ) );
-	}
-}
 
 void AHidePlayer::OnActionTryGrab()
 {
 	UE_LOG( LogTemp , Warning , TEXT( "Try" ) );
 	FVector OverlapSphereCenter = RightController->GetComponentLocation();
 
+	//Overlap Sphere와 겹친 물건을 저장할 Array
 	TArray<FOverlapResult> HitObjects;
 	FCollisionQueryParams CollisionParams;
+	//무시할 Actor들
 	CollisionParams.AddIgnoredActor( this );
 	CollisionParams.AddIgnoredComponent( RightController );
+	//Overlap 실행
+	bool bIsHit = GetWorld()->OverlapMultiByChannel( HitObjects , OverlapSphereCenter , FQuat::Identity , ECC_Visibility , FCollisionShape::MakeSphere( GrabRange ) );
 
-	bool bIsHit = GetWorld()->OverlapMultiByChannel(
-		HitObjects ,
-		OverlapSphereCenter ,
-		FQuat::Identity ,
-		ECC_Visibility ,
-		FCollisionShape::MakeSphere( GrabRange ) ,
-		CollisionParams );
+	//Grab bool 깃발 초기화	
+	bIsGrabbed = false;
 
-	if (!bIsHit) {
-		UE_LOG( LogTemp , Warning , TEXT( "No interactable object found to grab" ) );
-		return;
+	//Overlap 결과가 없다면 밑에 코드 접근 불가
+	if (!bIsHit) { return; }
+
+	if (!bIsGrabbed)
+	{
+		UE_LOG( LogTemp , Warning , TEXT( "No object found to grab" ) );
 	}
 
-	// 가장 가까운 액터 또는 컴포넌트 찾기
-	AActor* ClosestActor = nullptr;
-	UPrimitiveComponent* ClosestComponent = nullptr;
-	float MinDistanceSquared = FLT_MAX;
+	AInteraction* ClosestInteractable = nullptr;
+	float MinDistanceSquared = FLT_MAX; // 가능한 가장 큰 값을 초기 거리로 설정
 
-	for (const FOverlapResult& Result : HitObjects) {
-		AActor* Actor = Result.GetActor();
-		UPrimitiveComponent* Component = Result.GetComponent();
-		float DistanceSquared = (Component->GetComponentLocation() - OverlapSphereCenter).SizeSquared();
-
-		if (DistanceSquared < MinDistanceSquared) {
-			MinDistanceSquared = DistanceSquared;
-			ClosestActor = Actor;
-			ClosestComponent = Component;
+	for (int i = 0; i < HitObjects.Num(); ++i) {
+		AActor* HitActor = HitObjects[i].GetActor();
+		if (HitActor && HitActor->IsA( AInteraction::StaticClass() )) {
+			float DistanceSquared = (OverlapSphereCenter - HitObjects[i].GetComponent()->GetComponentLocation()).SizeSquared();
+			if (DistanceSquared < MinDistanceSquared) {
+				MinDistanceSquared = DistanceSquared;
+				ClosestInteractable = Cast<AInteraction>( HitActor );
+				// GrabbedObject를 현재 가장 가까운 Interactable의 컴포넌트로 설정
+				GrabbedObject = HitObjects[i].GetComponent();
+			}
 		}
 	}
 
-	// 가장 가까운 액터 또는 컴포넌트에 대한 처리
-	if (ClosestComponent && ClosestActor) {
-		// ProcessGrab 함수 내에서 액터와 컴포넌트를 구분하여 처리
-		ProcessGrab( ClosestComponent , ClosestActor );
-
-		// 그랩한 위치와 회전 저장
-		PreviousGrabLocation = ClosestComponent->GetComponentLocation();
-		PreviousGrabRotation = ClosestComponent->GetComponentRotation();
+	if (ClosestInteractable && GrabbedObject) 
+	{
+		// 여기서 GrabbedObject와 관련된 추가 작업 수행
+		bIsGrabbed = true;
+		GrabbedObject->SetSimulatePhysics( false );
+		GrabbedObject->SetCollisionEnabled( ECollisionEnabled::NoCollision );
+		GrabbedObject->AttachToComponent( RightController , FAttachmentTransformRules::KeepWorldTransform );
+		OnTriggerInteract( ClosestInteractable );
 	}
+	else 
+	{
+		// 추가된 부분: 케이블 처리
+		for (const FOverlapResult& Result : HitObjects)
+		{
+			AActor* HitActor = Result.GetActor();
+			if (HitActor)
+			{
+				ACable* localCableActor = Cast<ACable>( HitActor );
+				if (localCableActor && Result.GetComponent() == localCableActor->EndSphereCollision)
+				{
+					// 케이블의 EndSphereCollision을 잡기
+					GrabbedObject = Result.GetComponent();
+					bIsGrabbed = true;
+
+					// 추가: 케이블의 끝점 위치 업데이트 로직
+					// CableActor->SetCableEndLocation(RightController->GetComponentLocation());
+
+					UE_LOG( LogTemp , Warning , TEXT( "Cable EndSphere grabbed" ) );
+					break; // 첫 번째 케이블 객체를 처리한 후 나머지는 무시
+				}
+			}
+		}
+	}
+
+	if (!bIsGrabbed)
+	{
+		UE_LOG( LogTemp , Warning , TEXT( "No object found to grab" ) );
+	}
+
+	// 오버랩된 객체들을 순회하여 처리
+	//for (const FOverlapResult& Result : HitObjects)
+	//{
+	//	AActor* HitActor = Result.GetActor();
+	//	if (!HitActor) continue;
+
+	//	if (HitActor->IsA( AInteraction::StaticClass() ))
+	//	{
+	//		// AInteraction 처리 로직
+	//		AInteraction* InteractionActor = Cast<AInteraction>( HitActor );
+	//		if (InteractionActor && !GrabbedObject)
+	//		{
+	//			// Grab 로직 구현
+	//			GrabbedObject = Result.GetComponent();
+	//			bIsGrabbed = true;
+	//		}
+	//	}
+	//	else if (CableActor)
+	//	{
+	//		// 케이블 액터 처리 로직
+	//		GrabbedObject = Result.GetComponent();
+	//		bIsGrabbed = true;
+
+	//		// 케이블의 끝점을 현재 RightController의 위치로 설정
+	//		CableActor->SetCableEndLocation( RightController->GetComponentLocation() );
+	//		UE_LOG( LogTemp , Warning , TEXT( "Cable grabbed" ) );
+	//		return; // 첫 번째 케이블 객체를 처리한 후 나머지는 무시
+	//	}
+	//}
+
 }
+
 
 void AHidePlayer::OnActionUnGrab()
 {
-	if (!bIsGrabbed || !GrabbedComponent || !RightController)
+	//이미 Grab 깃발이 내려가있다면 밑에 코드 접근 불가
+	if (!bIsGrabbed) { return; }
+
+	if (bIsGrabbed && GrabbedObject)
 	{
-		UE_LOG( LogTemp , Warning , TEXT( "GrabError! Nothing is grabbed." ) );
-		return;
+		AInteraction* InteractionActor = Cast<AInteraction>( GrabbedObject->GetOwner() );
+		if (InteractionActor)
+		{
+			//손에서 Attach한 Actor때기
+			GrabbedObject->DetachFromComponent( FDetachmentTransformRules::KeepWorldTransform );
+			//Physics 활성화하기
+			GrabbedObject->SetSimulatePhysics( true );
+			//Collision 활성화하기
+			GrabbedObject->SetCollisionEnabled( ECollisionEnabled::QueryAndPhysics );
+
+			//던지기 힘 10%만 사용 
+			float ReducedThrowStrength = ThrowStrength * 1.0f;
+			GrabbedObject->AddForce( ThrowDirection * ThrowStrength * GrabbedObject->GetMass() );
+
+			// 물건을 회전하기, 회전 10%만 사용
+			float Angle; FVector Axis;
+			//저장한 Quaternion인 Delta 회전값에서 Axis and Angle 추출하기
+			DeltaRotation.ToAxisAndAngle( Axis , Angle );
+
+			float ReducedTorquePower = TorquePower * 1.0f;
+			FVector AngularVelocity = Axis * FMath::DegreesToRadians( Angle ) / GetWorld()->DeltaTimeSeconds;
+			GrabbedObject->SetPhysicsAngularVelocityInRadians( AngularVelocity * ReducedTorquePower , true );
+		}
 	}
+	else
+	{
+		if (GrabbedObject && CableActor)
+		{
+			// 케이블 액터의 EndLocation을 업데이트하는 함수를 호출합니다.
+			FVector NewEndLocation = RightController->GetComponentLocation();
+			CableActor->SetCableEndLocation( NewEndLocation );
 
-	// 손에서 Attach한 Component 해제
-	GrabbedComponent->DetachFromComponent( FDetachmentTransformRules::KeepWorldTransform );
-	// Physics 활성화
-	GrabbedComponent->SetSimulatePhysics( true );
-	// Collision 활성화
-	GrabbedComponent->SetCollisionEnabled( ECollisionEnabled::QueryAndPhysics );
+			// 필요한 추가 로직을 구현합니다.
+		}
 
-	// 던지기 방향은 RightController의 방향으로 설정
-	this->ThrowDirection = RightController->GetForwardVector();
-	// 던지기 힘 적용
-	GrabbedComponent->AddImpulse( ThrowDirection * ThrowStrength * GrabbedComponent->GetMass() );
-
-	// 던질 때 회전력 적용 (여기서는 예시로 Z축을 기준으로 회전)
-	FVector TorqueDirection = FVector( 0 , 0 , 1 ); // Z축 기준 회전
-	float TorqueStrength = 10.0f; // 회전력의 강도, 적절한 값을 실험을 통해 결정해야 함
-	GrabbedComponent->AddTorqueInRadians( TorqueDirection * TorqueStrength * GrabbedComponent->GetMass() );
-
-	// 상태 초기화
-	GrabbedComponent = nullptr; // Clear the reference to the grabbed component
+		// Grab 상태를 초기화합니다.
+		GrabbedObject = nullptr;
+	}
+	//Grab한 물건을 놓았기 때문에 변수에 nullptr 할당 	
 	bIsGrabbed = false;
-
+	GrabbedObject = nullptr;
 }
 
 void AHidePlayer::RightGrabbing()
@@ -392,12 +454,6 @@ void AHidePlayer::RightGrabbing()
 
 	//잡기 위치 저장
 	PreviousGrabRotation = RightController->GetComponentRotation().Quaternion();
-
-	//Quaternion 공식
-	//angle1 = q1, angle2 = q2
-	//angle1 + angle2 = q1 + q2
-	//-angle1 = q1.inverse()
-	//angle2 - angle1 = q2 * q1.inverse()
 
 	//위에 공식 참고
 	//회전값 계산하기
@@ -444,18 +500,18 @@ void AHidePlayer::PerformLineTrace()
 	}
 }
 
-void AHidePlayer::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
-                                 UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+void AHidePlayer::OnOverlapBegin( UPrimitiveComponent* OverlappedComp , AActor* OtherActor ,
+								 UPrimitiveComponent* OtherComp , int32 OtherBodyIndex , bool bFromSweep , const FHitResult& SweepResult )
 {
 	if (OtherActor != nullptr && OtherActor != this && OtherActor->IsA( AVREnemyPlayer::StaticClass() ))
 	{
 		UE_LOG( LogTemp , Warning , TEXT( "Overlapped!!" ) );
 		// count가 0 이하라면 함수 종료 
-		if(LifeCount<=0)
+		if (LifeCount <= 0)
 			return;
 		// 생명 카운트 다운 
 		LifeCount--;
-		if(playerUI)
+		if (playerUI)
 		{
 			playerUI->RemoveLife( LifeCount );
 		}
@@ -468,14 +524,14 @@ void AHidePlayer::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* Ot
 				VFX , // VFX는 유효한 UParticleSystem* 참조
 				SweepResult.ImpactPoint , // 충돌 지점에서 에미터를 생성
 				SweepResult.ImpactNormal.Rotation() // 에미터의 회전은 충돌 표면의 법선을 기준으로 설정
-				);
+			);
 			bLifeRemove = true;
 		}
 	}
 }
 
-void AHidePlayer::OnOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
-	int32 OtherBodyIndex)
+void AHidePlayer::OnOverlapEnd( UPrimitiveComponent* OverlappedComp , AActor* OtherActor , UPrimitiveComponent* OtherComp ,
+	int32 OtherBodyIndex )
 {
 	bLifeRemove = false;
 }
@@ -492,7 +548,7 @@ void AHidePlayer::OnLifeDepleted()
 	}
 }
 
-void AHidePlayer::UpdateTriggerStatus(bool bPressed)
+void AHidePlayer::UpdateTriggerStatus( bool bPressed )
 {
 	// 트리거 버튼 상태 업데이트
 	bIsTrigger = bPressed;
@@ -520,5 +576,4 @@ void AHidePlayer::OnActionUnTrigger()
 	bIsTrigger = false;
 	//bIsTriggerPressed = false;
 }
-
 

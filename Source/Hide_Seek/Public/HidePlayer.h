@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Cable.h"
 #include "GameFramework/Character.h"
 #include "InputActionValue.h"
 #include "InputMappingContext.h"
@@ -100,9 +101,6 @@ public:
 	UFUNCTION( BlueprintCallable, Category = "Interaction" )
 	void OnActionUnGrab();
 
-	UFUNCTION()
-	void ProcessGrab( UPrimitiveComponent* Component , AActor* Actor );
-
 	//Tick에서 실행됨
 	//만약에 bIsGrabbed이 True면 프레임마다 호출됨
 	UFUNCTION()
@@ -149,10 +147,9 @@ public:
 
 	/*인터렉션 관련 기능들*/
 	//Grab된 물건의 Component
-	UPROPERTY()
+	UPROPERTY( EditAnywhere, BlueprintReadWrite )
 	class UPrimitiveComponent* GrabbedObject;
 
-	AActor* GrabbedActor;
 
 	//던지는 방향
 	FVector ThrowDirection;
@@ -216,5 +213,8 @@ public:
 	bool bHasInteracted = false;
 
 	void UpdateTriggerStatus( bool bPressed );
+
+	UPROPERTY( EditAnywhere, BlueprintReadWrite )
+	class ACable* CableActor;
 
 };
