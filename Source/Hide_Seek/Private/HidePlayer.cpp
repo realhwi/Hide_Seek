@@ -256,6 +256,7 @@ void AHidePlayer::UpdateMovementSpeed()
 	}
 }
 
+
 bool AHidePlayer::IsTrigger() const
 {
 	return bIsTrigger;
@@ -276,119 +277,109 @@ void AHidePlayer::OnGrabInteract(AInteraction* InteractionActor)
 	InteractionActor->OnGrabInteract( this );
 }
 
+
+void AHidePlayer::ProcessGrab( UPrimitiveComponent* Component , AActor* Actor )
+{
+	if (Component && Actor) {
+		// 컴포넌트를 RightController에 부착
+		Component->AttachToComponent( RightController , FAttachmentTransformRules::SnapToTargetNotIncludingScale );
+		Component->SetSimulatePhysics( false );
+		Component->SetCollisionEnabled( ECollisionEnabled::NoCollision );
+
+		// 액터와 상호작용하는 로직 (예: 상호작용 인터페이스 호출)
+		if (Actor->Implements<UInteractable>()) {
+			IInteractable::Execute_Interact( Actor , this );
+		}
+
+		// 그랩 상태 설정
+		bIsGrabbed = true;
+		GrabbedComponent = Component;
+		GrabbedActor = Actor; // 필요에 따라 그랩한 액터를 저장
+
+		UE_LOG( LogTemp , Warning , TEXT( "Object grabbed successfully." ) );
+	}
+}
+
 void AHidePlayer::OnActionTryGrab()
 {
-	UE_LOG( LogTemp , Warning , TEXT( "Try" ));
+	UE_LOG( LogTemp , Warning , TEXT( "Try" ) );
 	FVector OverlapSphereCenter = RightController->GetComponentLocation();
 
-	//Overlap Sphere와 겹친 물건을 저장할 Array
 	TArray<FOverlapResult> HitObjects;
 	FCollisionQueryParams CollisionParams;
-	//무시할 Actor들
 	CollisionParams.AddIgnoredActor( this );
 	CollisionParams.AddIgnoredComponent( RightController );
-	//Overlap 실행
-	bool bIsHit = GetWorld()->OverlapMultiByChannel( HitObjects , OverlapSphereCenter , FQuat::Identity , ECC_Visibility , FCollisionShape::MakeSphere( GrabRange ) );
 
-	//Grab bool 깃발 초기화	
-	bIsGrabbed = false;
+	bool bIsHit = GetWorld()->OverlapMultiByChannel(
+		HitObjects ,
+		OverlapSphereCenter ,
+		FQuat::Identity ,
+		ECC_Visibility ,
+		FCollisionShape::MakeSphere( GrabRange ) ,
+		CollisionParams );
 
-	//Overlap 결과가 없다면 밑에 코드 접근 불가
-	if (!bIsHit) { return; }
-
-	//가장 가까운 물건 Index
-	int ClosestObjectIndex = 0;			//Index 변수 선언
-	//가장 가까운 물건의 Index를 찾는 반복문
-	for (int i = 0; i < HitObjects.Num(); ++i) {
-		//Overlap와 겹친 물건이 Physics가 켜져이지 않다면 현재 Array Index 건너뛰기
-		if (!HitObjects[i].GetComponent()->IsSimulatingPhysics()) { continue; }
-
-		//Array에서 가장 가까운 물건 찾기 - HitObjects[ClosestObjectIndex]와 HitObjects[현재 Index] 비교함
-		//저장한 Index와 손의 거리
-
-		float DistBtwnHandClosest = FVector::Dist( OverlapSphereCenter , HitObjects[ClosestObjectIndex].GetComponent()->GetComponentLocation() );
-		//현재 Index와 손의 거리
-		float DistBtwnHandCurrent = FVector::Dist( OverlapSphereCenter , HitObjects[i].GetComponent()->GetComponentLocation() );
-
-		//현재 Index가 더 가깝다면
-		if (DistBtwnHandCurrent < DistBtwnHandClosest) {
-			//현재 Index 저장하기	
-			ClosestObjectIndex = i;
-		}
-		//Grab bool 깃발 올리기	
-		bIsGrabbed = true;
-
+	if (!bIsHit) {
+		UE_LOG( LogTemp , Warning , TEXT( "No interactable object found to grab" ) );
+		return;
 	}
 
-	//만약에 물건을 잡았고 Grab bool 깃발이 올라갔으면
-	if (bIsGrabbed) 
-	{
-		//ClosestObjectIndex를 사용해서 Grab한 물건을 HitObjects Array에서 찾아서 저장하기
-		GrabbedObject = HitObjects[ClosestObjectIndex].GetComponent();
-		//Physics 비활성화
-		GrabbedObject->SetSimulatePhysics( false );
-		//Collision 비활성화
-		GrabbedObject->SetCollisionEnabled( ECollisionEnabled::NoCollision );
-		///RightHand에 붙이기
-		GrabbedObject->AttachToComponent( RightController , FAttachmentTransformRules::KeepWorldTransform );
+	// 가장 가까운 액터 또는 컴포넌트 찾기
+	AActor* ClosestActor = nullptr;
+	UPrimitiveComponent* ClosestComponent = nullptr;
+	float MinDistanceSquared = FLT_MAX;
 
-		//잡기 위치 저장
-		PreviousGrabRotation = RightController->GetComponentRotation().Quaternion();
-		//잡기 회전값 저장
-		PreviousGrabRotation = RightController->GetComponentQuat();
+	for (const FOverlapResult& Result : HitObjects) {
+		AActor* Actor = Result.GetActor();
+		UPrimitiveComponent* Component = Result.GetComponent();
+		float DistanceSquared = (Component->GetComponentLocation() - OverlapSphereCenter).SizeSquared();
 
-		if (GrabbedObject)
-		{
-			UE_LOG( LogTemp , Warning , TEXT( "GrabbedObject" ) );
-
-			// 잡고 있는 객체가 AInteraction 클래스의 인스턴스인지 확인
-			AInteraction* InteractionActor = Cast<AInteraction>( GrabbedObject->GetOwner() );
-			if (InteractionActor)
-			{
-				UE_LOG( LogTemp , Warning , TEXT( "Grap!!" ) );
-				// AInteraction 인스턴스에 대한 추가 작업 수행
-				OnTriggerInteract( InteractionActor );
-			}
+		if (DistanceSquared < MinDistanceSquared) {
+			MinDistanceSquared = DistanceSquared;
+			ClosestActor = Actor;
+			ClosestComponent = Component;
 		}
+	}
+
+	// 가장 가까운 액터 또는 컴포넌트에 대한 처리
+	if (ClosestComponent && ClosestActor) {
+		// ProcessGrab 함수 내에서 액터와 컴포넌트를 구분하여 처리
+		ProcessGrab( ClosestComponent , ClosestActor );
+
+		// 그랩한 위치와 회전 저장
+		PreviousGrabLocation = ClosestComponent->GetComponentLocation();
+		PreviousGrabRotation = ClosestComponent->GetComponentRotation();
 	}
 }
 
 void AHidePlayer::OnActionUnGrab()
 {
-	//이미 Grab 깃발이 내려가있다면 밑에 코드 접근 불가
-	if (!bIsGrabbed) { return; }
+	if (!bIsGrabbed || !GrabbedComponent || !RightController)
+	{
+		UE_LOG( LogTemp , Warning , TEXT( "GrabError! Nothing is grabbed." ) );
+		return;
+	}
 
-	//Grab bool 깃발 내리기
+	// 손에서 Attach한 Component 해제
+	GrabbedComponent->DetachFromComponent( FDetachmentTransformRules::KeepWorldTransform );
+	// Physics 활성화
+	GrabbedComponent->SetSimulatePhysics( true );
+	// Collision 활성화
+	GrabbedComponent->SetCollisionEnabled( ECollisionEnabled::QueryAndPhysics );
+
+	// 던지기 방향은 RightController의 방향으로 설정
+	this->ThrowDirection = RightController->GetForwardVector();
+	// 던지기 힘 적용
+	GrabbedComponent->AddImpulse( ThrowDirection * ThrowStrength * GrabbedComponent->GetMass() );
+
+	// 던질 때 회전력 적용 (여기서는 예시로 Z축을 기준으로 회전)
+	FVector TorqueDirection = FVector( 0 , 0 , 1 ); // Z축 기준 회전
+	float TorqueStrength = 10.0f; // 회전력의 강도, 적절한 값을 실험을 통해 결정해야 함
+	GrabbedComponent->AddTorqueInRadians( TorqueDirection * TorqueStrength * GrabbedComponent->GetMass() );
+
+	// 상태 초기화
+	GrabbedComponent = nullptr; // Clear the reference to the grabbed component
 	bIsGrabbed = false;
 
-	//손에서 Attach한 Actor때기
-	GrabbedObject->DetachFromComponent( FDetachmentTransformRules::KeepWorldTransform );
-	//Physics 활성화하기
-	GrabbedObject->SetSimulatePhysics( true );
-	//Collision 활성화하기
-	GrabbedObject->SetCollisionEnabled( ECollisionEnabled::QueryAndPhysics );
-
-	//던지기 힘 10%만 사용 
-	float ReducedThrowStrength = ThrowStrength * 2.0f;
-	GrabbedObject->AddForce( ThrowDirection * ThrowStrength * GrabbedObject->GetMass() );
-
-	// 물건을 회전하기, 회전 10%만 사용
-	float Angle; FVector Axis;
-	//저장한 Quaternion인 Delta 회전값에서 Axis and Angle 추출하기
-	DeltaRotation.ToAxisAndAngle( Axis , Angle );
-
-	float ReducedTorquePower = TorquePower * 2.0f;
-	FVector AngularVelocity = Axis * FMath::DegreesToRadians( Angle ) / GetWorld()->DeltaTimeSeconds;
-	GrabbedObject->SetPhysicsAngularVelocityInRadians( AngularVelocity * ReducedTorquePower , true );
-
-	// float DeltaTime = GetWorld()->DeltaTimeSeconds;
-	//회전속도 계산하기
-	// FVector AngularVelocity = (1 / DeltaTime) * Angle * Axis;
-	//회전힘 적용하기
-	// GrabbedObject->SetPhysicsAngularVelocityInRadians( AngularVelocity * TorquePower , true );
-
-	//Grab한 물건을 놓았기 때문에 변수에 nullptr 할당 	
-	GrabbedObject = nullptr;
 }
 
 void AHidePlayer::RightGrabbing()
