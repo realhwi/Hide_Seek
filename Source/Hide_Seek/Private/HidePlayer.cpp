@@ -5,7 +5,6 @@
 #include <EnhancedInputComponent.h>
 #include <EnhancedInputSubsystems.h>
 #include <InputActionValue.h>
-
 #include "Cable.h"
 #include "Components/CapsuleComponent.h"
 #include "Camera/CameraComponent.h"
@@ -153,6 +152,13 @@ void AHidePlayer::Tick( float DeltaTime )
 	}
 
 	UpdateMovementSpeed();
+
+	if (CableActor && bIsGrabbed)
+	{
+		FVector ControllerLocation = RightController->GetComponentLocation();
+		FRotator ControllerRotation = RightController->GetComponentRotation();
+		UE_LOG( LogTemp , Warning , TEXT( "RightController Location: %s, Rotation: %s" ) , *ControllerLocation.ToString() , *ControllerRotation.ToString() );
+	}
 }
 
 // Called to bind functionality to input
@@ -261,6 +267,11 @@ void AHidePlayer::UpdateMovementSpeed()
 	}
 }
 
+UPrimitiveComponent* AHidePlayer::GetGrabbedObject() const
+{
+	return GrabbedObject;
+}
+
 
 bool AHidePlayer::IsTrigger() const
 {
@@ -285,7 +296,7 @@ void AHidePlayer::OnGrabInteract( AInteraction* InteractionActor )
 
 void AHidePlayer::OnActionTryGrab()
 {
-	UE_LOG( LogTemp , Warning , TEXT( "Try" ) );
+	UE_LOG( LogTemp , Warning , TEXT( "Grab" ) );
 	FVector OverlapSphereCenter = RightController->GetComponentLocation();
 
 	//Overlap Sphere와 겹친 물건을 저장할 Array
@@ -301,11 +312,10 @@ void AHidePlayer::OnActionTryGrab()
 	bIsGrabbed = false;
 
 	//Overlap 결과가 없다면 밑에 코드 접근 불가
-	if (!bIsHit) { return; }
-
-	if (!bIsGrabbed)
+	if (!bIsHit)
 	{
 		UE_LOG( LogTemp , Warning , TEXT( "No object found to grab" ) );
+		return;
 	}
 
 	AInteraction* ClosestInteractable = nullptr;
@@ -333,29 +343,38 @@ void AHidePlayer::OnActionTryGrab()
 		GrabbedObject->AttachToComponent( RightController , FAttachmentTransformRules::KeepWorldTransform );
 		OnTriggerInteract( ClosestInteractable );
 	}
+	//여기까진 잘 수행됨
+
 	else 
 	{
-		// 추가된 부분: 케이블 처리
-		ACable* ClosestCable =nullptr;
-		for (const FOverlapResult& Result : HitObjects)
+		for (const FOverlapResult& OverlapResult : HitObjects)
 		{
-			ACable* CableActor = Cast<ACable>( Result.GetActor() );
-			if (CableActor && Result. GetComponent() == CableActor->EndSphereCollision)
+			ACable* OverlappedCable = Cast<ACable>( OverlapResult.GetActor() );
+			if (OverlappedCable && OverlapResult.GetComponent() == OverlappedCable->EndSphereCollision)
 			{
-				ClosestCable = CableActor;
+				// 케이블 액터인 경우 처리 
+				// CableActor에 OverlappedCable을 할당.
+				CableActor = OverlappedCable;
+				// GrabbedObject에 OverlapResult에서 가져온 컴포넌트를 할당.
+				GrabbedObject = OverlapResult.GetComponent();
+				bIsGrabbed = true;
+
+				// 케이블의 OwningPlayer를 현재 플레이어로 설정.(케이블의 Tick에 연결)
+				CableActor->OwningPlayer = this;
+
+				// FAttachmentTransformRules 생성, 어태치 했을 때 회전값 적용?  
+				FAttachmentTransformRules AttachmentRules( EAttachmentRule::SnapToTarget , EAttachmentRule::SnapToTarget , EAttachmentRule::KeepWorld , false );
+
+				UE_LOG( LogTemp , Warning , TEXT( "Attempting to attach Cable EndSphere to RightController." ) );
+				// EndSphereCollision을 RightController에 부착
+				CableActor->EndSphereCollision->AttachToComponent( RightController , AttachmentRules );
+			
+				UE_LOG( LogTemp , Warning , TEXT( "Cable EndSphere grabbed and attached to RightController" ) );
 				break;
+				// 여기까진 로그만 잘 찍힘 
 			}
 		}
-
-		if(ClosestCable)
-		{
-			CableActor = ClosestCable;
-			CableActor->AttachCableToEnd(RightController);
-			bIsGrabbed = true; 
-		}
 	}
-
-
 
 	if (!bIsGrabbed)
 	{
@@ -418,23 +437,32 @@ void AHidePlayer::OnActionUnGrab()
 
 			// 물건을 회전하기, 회전 10%만 사용
 			float Angle; FVector Axis;
+
 			//저장한 Quaternion인 Delta 회전값에서 Axis and Angle 추출하기
 			DeltaRotation.ToAxisAndAngle( Axis , Angle );
-
+			Angle *= 0.1f;
 			float ReducedTorquePower = TorquePower * 1.0f;
 			FVector AngularVelocity = Axis * FMath::DegreesToRadians( Angle ) / GetWorld()->DeltaTimeSeconds;
 			GrabbedObject->SetPhysicsAngularVelocityInRadians( AngularVelocity * ReducedTorquePower , true );
 		}
 	}
-	else
+	// 여기까지 잘 수행됨 
+	else 
 	{
-		if (CableActor)
+		if (CableActor && GrabbedObject == CableActor->EndSphereCollision)
 		{
-			CableActor->ReleaseCableFromEnd();
-			CableActor = nullptr;
-			bIsGrabbed = false;
-		}
+			// EndSphereCollision을 RightController에서 분리
+			CableActor->EndSphereCollision->DetachFromComponent( FDetachmentTransformRules::KeepWorldTransform );
 
+			// 케이블의 끝 위치를 NewEndSphereCollision으로 설정
+			CableActor->SetCableEndLocation( CableActor->NewEndSphereCollision->GetComponentLocation() );
+
+			CableActor = nullptr;
+			GrabbedObject = nullptr;
+			bIsGrabbed = false;
+
+			UE_LOG( LogTemp , Warning , TEXT( "Cable released from RightController and end location updated." ) );
+		}
 	}
 	//Grab한 물건을 놓았기 때문에 변수에 nullptr 할당 	
 	bIsGrabbed = false;
@@ -457,6 +485,17 @@ void AHidePlayer::RightGrabbing()
 	DeltaRotation = RightController->GetComponentQuat() * PreviousGrabRotation.Inverse();
 	//회전값 저장하기
 	PreviousGrabRotation = RightController->GetComponentQuat();
+
+	// 케이블 액터의 EndSphereCollision이 RightController에 올바르게 부착되어 있는지 확인
+	// 부착되어 있다면 EndSphereCollision의 위치를 업데이트
+	if (CableActor && GrabbedObject == CableActor->EndSphereCollision)
+	{
+		// RightController의 위치와 회전으로 EndSphereCollision의 위치와 회전을 업데이트
+		CableActor->EndSphereCollision->SetWorldLocationAndRotation( RightController->GetComponentLocation() , RightController->GetComponentRotation() );
+
+		FVector CurrentLocation = CableActor->EndSphereCollision->GetComponentLocation();
+		UE_LOG( LogTemp , Warning , TEXT( "EndSphereCollision Location after attachment: %s" ) , *CurrentLocation.ToString() );
+	}
 }
 
 void AHidePlayer::PerformLineTrace()
@@ -555,7 +594,6 @@ void AHidePlayer::UpdateTriggerStatus( bool bPressed )
 		bHasInteracted = false;
 	}
 }
-
 
 void AHidePlayer::OnActionTrigger()
 {

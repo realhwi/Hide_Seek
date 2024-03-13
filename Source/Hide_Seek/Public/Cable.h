@@ -6,6 +6,8 @@
 #include "GameFramework/Actor.h"
 #include "Cable.generated.h"
 
+class AHidePlayer;
+
 UCLASS()
 class HIDE_SEEK_API ACable : public AActor
 {
@@ -50,11 +52,12 @@ public:
 	// 플레이어의 RightController 위치를 저장하는 변수
 	FVector PlayerRightControllerLocation;
 
-	void SetCableEndLocation( FVector NewLocation );
-
 	UFUNCTION( BlueprintCallable )
-	void AttachCableToEnd( UPrimitiveComponent* ComponentToAttach );
+	void SetCableEndLocation( const FVector& NewEndLocation );
 
-	UFUNCTION( BlueprintCallable )
-	void ReleaseCableFromEnd();
+	UFUNCTION()
+	void OnCableEndOverlap( UPrimitiveComponent* OverlappedComponent , AActor* OtherActor , UPrimitiveComponent* OtherComp , int32 OtherBodyIndex , bool bFromSweep , const FHitResult& SweepResult );
+
+	UPROPERTY( EditAnywhere , BlueprintReadWrite )
+	AHidePlayer* OwningPlayer;
 };

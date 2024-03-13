@@ -3,13 +3,13 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Cable.h"
 #include "GameFramework/Character.h"
 #include "InputActionValue.h"
 #include "InputMappingContext.h"
 #include "Interaction.h"
 #include "HidePlayer.generated.h"
 
+class ACable; // 전방 선언을 추가합니다.
 UCLASS()
 class HIDE_SEEK_API AHidePlayer : public ACharacter
 {
@@ -150,6 +150,8 @@ public:
 	UPROPERTY( EditAnywhere, BlueprintReadWrite )
 	class UPrimitiveComponent* GrabbedObject;
 
+	UFUNCTION()
+	UPrimitiveComponent* GetGrabbedObject() const;
 
 	//던지는 방향
 	FVector ThrowDirection;

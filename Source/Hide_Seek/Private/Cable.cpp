@@ -49,8 +49,13 @@ void ACable::BeginPlay()
 
 	// 케이블 컴포넌트를 StartStaticMesh에 붙입니다.
 	CableComponent->SetupAttachment( StartStaticMesh );
+	
 	// 케이블의 끝을 스피어 콜리전에 연결
 	CableComponent->EndLocation = EndSphereCollision->GetComponentLocation();
+
+	// 로그를 통해 케이블 컴포넌트와 스피어 콜리전 설정 확인
+	UE_LOG( LogTemp , Warning , TEXT( "CableComponent is attached to StartStaticMesh." ) );
+	UE_LOG( LogTemp , Warning , TEXT( "CableComponent EndLocation is set to: %s" ) , *CableComponent->EndLocation.ToString() );
 }
 
 // Called every frame
@@ -58,42 +63,67 @@ void ACable::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-}
+	//if (OwningPlayer)
+	//{
+	//	UE_LOG( LogTemp , Warning , TEXT( "OwningPlayer is valid." ) );
+	//	if (OwningPlayer->IsGrab())
+	//	{
+	//		UE_LOG( LogTemp , Warning , TEXT( "OwningPlayer is grabbing." ) );
+	//		UPrimitiveComponent* GrabbedObject = OwningPlayer->GetGrabbedObject();
 
-void ACable::SetCableEndLocation(FVector NewLocation)
-{
-	// 케이블 컴포넌트의 EndLocation을 새 위치로 설정합니다.
-	CableComponent->EndLocation = NewLocation;
-}
+	//		// GrabbedObject와 EndSphereCollision의 주소 비교
+	//		UE_LOG( LogTemp , Warning , TEXT( "GrabbedObject: %p, EndSphereCollision: %p" ) , (void*)GrabbedObject , (void*)EndSphereCollision );
 
-void ACable::AttachCableToEnd(UPrimitiveComponent* ComponentToAttach)
-{
-	if (ComponentToAttach)
+	//		if (GrabbedObject == EndSphereCollision)
+	//		{
+	//			// EndSphereCollision의 현재 위치로 케이블의 끝 위치를 업데이트
+	//			CableComponent->EndLocation = EndSphereCollision->GetComponentLocation();
+
+	//			// 로그를 통해 업데이트된 위치를 확인
+	//			UE_LOG( LogTemp , Warning , TEXT( "Cable end location updated to: %s" ) , *CableComponent->EndLocation.ToString() );
+	//		}
+	//		else
+	//		{
+	//			UE_LOG( LogTemp , Warning , TEXT( "GrabbedObject is not the EndSphereCollision." ) );
+	//		}
+	//	}
+	//	else
+	//	{
+	//		UE_LOG( LogTemp , Warning , TEXT( "OwningPlayer is not grabbing." ) );
+	//	}
+	//}
+	//else
+	//{
+	//	UE_LOG( LogTemp , Warning , TEXT( "OwningPlayer is nullptr." ) );
+	//}
+
+	 // 케이블이 잡혀 있는지 확인
+	if (OwningPlayer && OwningPlayer->IsGrab())
 	{
-		// Attach the cable's end collision component to the passed component (e.g., RightController)
-		EndSphereCollision->AttachToComponent( ComponentToAttach , FAttachmentTransformRules::SnapToTargetNotIncludingScale );
-
-		// Disable collision, physics, etc. as necessary
-		EndSphereCollision->SetCollisionEnabled( ECollisionEnabled::NoCollision );
-		// ... any additional setup when the cable is grabbed ...
+		// 잡고 있는 오브젝트가 EndSphereCollision인지 확인
+		if (OwningPlayer->GetGrabbedObject() == EndSphereCollision)
+		{
+			// EndSphereCollision의 현재 위치로 케이블의 끝 위치를 업데이트
+			CableComponent->EndLocation = EndSphereCollision->GetComponentLocation();
+			// 로그를 통해 업데이트된 위치를 확인
+			UE_LOG( LogTemp , Warning , TEXT( "Cable end location updated to: %s" ) , *CableComponent->EndLocation.ToString() );
+		}
 	}
 }
 
-void ACable::ReleaseCableFromEnd()
+void ACable::SetCableEndLocation(const FVector& NewEndLocation)
 {
-	// Re-enable collision, physics, etc. as necessary
-	EndSphereCollision->SetCollisionEnabled( ECollisionEnabled::QueryOnly );
+	if (CableComponent)
+	{
+		// 케이블 컴포넌트의 EndLocation을 새 위치로 설정
+		CableComponent->EndLocation = NewEndLocation;
+		UE_LOG( LogTemp , Warning , TEXT( "Cable end location updated to: %s" ) , *NewEndLocation.ToString() );
+	}
+}
 
-	// Detach the cable's end collision component
-	EndSphereCollision->DetachFromComponent( FDetachmentTransformRules::KeepWorldTransform );
-
-	// Move the end sphere to the new static mesh location
-	EndSphereCollision->SetWorldLocation( NewEndStaticMesh->GetComponentLocation() );
-
-	// Attach the cable component's end to the new static mesh so it follows it
-	CableComponent->SetAttachEndTo( NewEndStaticMesh , FName( TEXT( "New" ) ) );
-
-	// ... any additional setup when the cable is released ...
+void ACable::OnCableEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
+	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
 }
 
 
