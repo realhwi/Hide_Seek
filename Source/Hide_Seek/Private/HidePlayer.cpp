@@ -87,6 +87,8 @@ AHidePlayer::AHidePlayer()
 		static ConstructorHelpers::FObjectFinder<USkeletalMesh> MeshFinder( TEXT( "/Script/Engine.SkeletalMesh'/Game/Characters/Mannequins/Meshes/SKM_Quinn_Simple.SKM_Quinn_Simple'" ) );
 		GetMesh()->SetSkeletalMesh( MeshFinder.Object);
 	}*/
+
+	CableActor = nullptr;
 }
 
 
@@ -334,27 +336,26 @@ void AHidePlayer::OnActionTryGrab()
 	else 
 	{
 		// 추가된 부분: 케이블 처리
+		ACable* ClosestCable =nullptr;
 		for (const FOverlapResult& Result : HitObjects)
 		{
-			AActor* HitActor = Result.GetActor();
-			if (HitActor)
+			ACable* CableActor = Cast<ACable>( Result.GetActor() );
+			if (CableActor && Result. GetComponent() == CableActor->EndSphereCollision)
 			{
-				ACable* localCableActor = Cast<ACable>( HitActor );
-				if (localCableActor && Result.GetComponent() == localCableActor->EndSphereCollision)
-				{
-					// 케이블의 EndSphereCollision을 잡기
-					GrabbedObject = Result.GetComponent();
-					bIsGrabbed = true;
-
-					// 추가: 케이블의 끝점 위치 업데이트 로직
-					// CableActor->SetCableEndLocation(RightController->GetComponentLocation());
-
-					UE_LOG( LogTemp , Warning , TEXT( "Cable EndSphere grabbed" ) );
-					break; // 첫 번째 케이블 객체를 처리한 후 나머지는 무시
-				}
+				ClosestCable = CableActor;
+				break;
 			}
 		}
+
+		if(ClosestCable)
+		{
+			CableActor = ClosestCable;
+			CableActor->AttachCableToEnd(RightController);
+			bIsGrabbed = true; 
+		}
 	}
+
+
 
 	if (!bIsGrabbed)
 	{
@@ -427,17 +428,13 @@ void AHidePlayer::OnActionUnGrab()
 	}
 	else
 	{
-		if (GrabbedObject && CableActor)
+		if (CableActor)
 		{
-			// 케이블 액터의 EndLocation을 업데이트하는 함수를 호출합니다.
-			FVector NewEndLocation = RightController->GetComponentLocation();
-			CableActor->SetCableEndLocation( NewEndLocation );
-
-			// 필요한 추가 로직을 구현합니다.
+			CableActor->ReleaseCableFromEnd();
+			CableActor = nullptr;
+			bIsGrabbed = false;
 		}
 
-		// Grab 상태를 초기화합니다.
-		GrabbedObject = nullptr;
 	}
 	//Grab한 물건을 놓았기 때문에 변수에 nullptr 할당 	
 	bIsGrabbed = false;

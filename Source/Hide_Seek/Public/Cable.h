@@ -52,4 +52,9 @@ public:
 
 	void SetCableEndLocation( FVector NewLocation );
 
+	UFUNCTION( BlueprintCallable )
+	void AttachCableToEnd( UPrimitiveComponent* ComponentToAttach );
+
+	UFUNCTION( BlueprintCallable )
+	void ReleaseCableFromEnd();
 };

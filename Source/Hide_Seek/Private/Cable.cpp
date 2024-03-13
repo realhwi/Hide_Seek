@@ -39,6 +39,7 @@ ACable::ACable()
 	NewEndSphereCollision->InitSphereRadius( 15.0f );
 	NewEndSphereCollision->SetCollisionProfileName( TEXT( "OverlapAllDynamic" ) );
 
+	EndSphereCollision->OnComponentBeginOverlap.AddDynamic( this , &ACable::OnCableEndOverlap );
 }
 
 // Called when the game starts or when spawned
@@ -64,5 +65,36 @@ void ACable::SetCableEndLocation(FVector NewLocation)
 	// 케이블 컴포넌트의 EndLocation을 새 위치로 설정합니다.
 	CableComponent->EndLocation = NewLocation;
 }
+
+void ACable::AttachCableToEnd(UPrimitiveComponent* ComponentToAttach)
+{
+	if (ComponentToAttach)
+	{
+		// Attach the cable's end collision component to the passed component (e.g., RightController)
+		EndSphereCollision->AttachToComponent( ComponentToAttach , FAttachmentTransformRules::SnapToTargetNotIncludingScale );
+
+		// Disable collision, physics, etc. as necessary
+		EndSphereCollision->SetCollisionEnabled( ECollisionEnabled::NoCollision );
+		// ... any additional setup when the cable is grabbed ...
+	}
+}
+
+void ACable::ReleaseCableFromEnd()
+{
+	// Re-enable collision, physics, etc. as necessary
+	EndSphereCollision->SetCollisionEnabled( ECollisionEnabled::QueryOnly );
+
+	// Detach the cable's end collision component
+	EndSphereCollision->DetachFromComponent( FDetachmentTransformRules::KeepWorldTransform );
+
+	// Move the end sphere to the new static mesh location
+	EndSphereCollision->SetWorldLocation( NewEndStaticMesh->GetComponentLocation() );
+
+	// Attach the cable component's end to the new static mesh so it follows it
+	CableComponent->SetAttachEndTo( NewEndStaticMesh , FName( TEXT( "New" ) ) );
+
+	// ... any additional setup when the cable is released ...
+}
+
 
 

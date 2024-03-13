@@ -215,6 +215,6 @@ public:
 	void UpdateTriggerStatus( bool bPressed );
 
 	UPROPERTY( EditAnywhere, BlueprintReadWrite )
-	class ACable* CableActor;
+	ACable* CableActor;
 
 };
