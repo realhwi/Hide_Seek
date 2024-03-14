@@ -9,6 +9,7 @@
 #include "Interaction.h"
 #include "HidePlayer.generated.h"
 
+class ACable; // 전방 선언을 추가합니다.
 UCLASS()
 class HIDE_SEEK_API AHidePlayer : public ACharacter
 {
@@ -31,8 +32,8 @@ public:
 
 	virtual void OnConstruction(const FTransform& Transform) override;
 
-	UPROPERTY(EditAnywhere)
-	float Movespeed = 300;
+	//UPROPERTY(EditAnywhere)
+	//float Movespeed = 300;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputMappingContext* IMC_JHVRInput;
@@ -45,6 +46,10 @@ public:
 	class UInputAction* IA_Grab;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* IA_Trigger;
+	UPROPERTY( EditAnywhere , BlueprintReadOnly , Category = Input , meta = (AllowPrivateAccess = "true") )
+	class UInputAction* IA_Run;
+	UPROPERTY( EditAnywhere , BlueprintReadOnly , Category = Input , meta = (AllowPrivateAccess = "true") )
+	class UInputAction* IA_Crouch;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Settings | Player")
 	class UCameraComponent* CameraComponent;
@@ -68,6 +73,9 @@ private:
 	UFUNCTION()
 	void Look(const FInputActionValue& Value);
 
+	UPROPERTY( Transient )
+	UPrimitiveComponent* GrabbedComponent; // 현재 잡고 있는 컴포넌트
+
 public:
 
 	// 상호작용 액터
@@ -86,11 +94,11 @@ public:
 	float GrabRange = 50;
 
 	//Grab Input 버튼 누를때 실행됨
-	UFUNCTION()
+	UFUNCTION( BlueprintCallable, Category = "Interaction" )
 	void OnActionTryGrab();
 
 	//Grab Input 버튼 땔때 실행됨 
-	UFUNCTION()
+	UFUNCTION( BlueprintCallable, Category = "Interaction" )
 	void OnActionUnGrab();
 
 	//Tick에서 실행됨
@@ -114,17 +122,44 @@ public:
 	UFUNCTION()
 	void PerformLineTrace();
 
+	UFUNCTION()
+	void OnIACrouch( const FInputActionValue& Value );
 
+	UFUNCTION()
+	void OnIAUnCrouch( const FInputActionValue& Value );
+
+	// 쑤그리기 
+	UPROPERTY( EditAnywhere , BlueprintReadWrite )
+	bool isCrouched;
+
+	UFUNCTION()
+	void ONIARun( const FInputActionValue& Value );
+
+	UFUNCTION()
+	void ONIAUnRun( const FInputActionValue& Value );
+
+	UFUNCTION()
+	void UpdateMovementSpeed();
+
+	bool bIsRun = false;
+
+public:
+
+	/*인터렉션 관련 기능들*/
 	//Grab된 물건의 Component
-	UPROPERTY()
+	UPROPERTY( EditAnywhere, BlueprintReadWrite )
 	class UPrimitiveComponent* GrabbedObject;
+
+	UFUNCTION()
+	UPrimitiveComponent* GetGrabbedObject() const;
 
 	//던지는 방향
 	FVector ThrowDirection;
+	FVector PreviousGrabLocation;
 
 	//던질때 힘
 	UPROPERTY(EditAnywhere, Category = "Grab", meta = (AllowPrivateAccess = true))
-	float ThrowStrength = 10;
+	float ThrowStrength;
 
 	//Grab위치를 실시간으로 업데이트 해야하기 때문에 여기다가 저장함
 	FVector PreviousGrabPosition;
@@ -132,6 +167,7 @@ public:
 	FQuat PreviousGrabRotation;
 	//회전 변화량
 	FQuat DeltaRotation;
+	
 
 	//회전 힘
 	UPROPERTY(EditAnywhere, Category = "Grab", meta = (AllowPrivateAccess = true))
@@ -177,9 +213,10 @@ public:
 	// 인터렉션 실행 감지
 	UPROPERTY(EditAnywhere)
 	bool bHasInteracted = false;
-	UPROPERTY( EditAnywhere )
-	bool bIsTriggerPressed = false;
 
 	void UpdateTriggerStatus( bool bPressed );
+
+	UPROPERTY( EditAnywhere, BlueprintReadWrite )
+	ACable* CableActor;
 
 };
