@@ -52,11 +52,11 @@ public:
 	// 플레이어의 RightController 위치를 저장하는 변수
 	FVector PlayerRightControllerLocation;
 
-	UFUNCTION( BlueprintCallable )
-	void SetCableEndLocation( const FVector& NewEndLocation );
+	UFUNCTION(BlueprintCallable)
+	void HandleCableGrabbed( UPrimitiveComponent* HandMesh );
 
-	UFUNCTION()
-	void OnCableEndOverlap( UPrimitiveComponent* OverlappedComponent , AActor* OtherActor , UPrimitiveComponent* OtherComp , int32 OtherBodyIndex , bool bFromSweep , const FHitResult& SweepResult );
+	UFUNCTION( BlueprintCallable )
+	void HandleCableReleased();
 
 	UPROPERTY( EditAnywhere , BlueprintReadWrite )
 	AHidePlayer* OwningPlayer;
