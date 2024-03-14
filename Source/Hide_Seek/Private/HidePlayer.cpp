@@ -59,18 +59,25 @@ AHidePlayer::AHidePlayer()
 	RightHandMesh->SetupAttachment( GetMesh() , TEXT( "hand_rPoint" ) );
 	// RightHandMesh->SetupAttachment(RightController);
 
-	static ConstructorHelpers::FObjectFinder<UStaticMesh> LeftMeshFinder( TEXT( "/Script/Engine.StaticMesh'/Game/JH/Models/left_OculusTouch_v2Controller.left_OculusTouch_v2Controller'" ) );
-	if (LeftMeshFinder.Succeeded())
-	{
-		LeftHandMesh->SetStaticMesh( LeftMeshFinder.Object );
-	}
+	//static ConstructorHelpers::FObjectFinder<UStaticMesh> LeftMeshFinder( TEXT( "/Script/Engine.StaticMesh'/Game/JH/Models/left_OculusTouch_v2Controller.left_OculusTouch_v2Controller'" ) );
+	//if (LeftMeshFinder.Succeeded())
+	//{
+	//	LeftHandMesh->SetStaticMesh( LeftMeshFinder.Object );
+	//}
 
-	// Find and attach the static mesh for RightHandMesh
-	static ConstructorHelpers::FObjectFinder<UStaticMesh> RightMeshFinder( TEXT( "/Script/Engine.StaticMesh'/Game/JH/Models/right_OculusTouch_v2Controller.right_OculusTouch_v2Controller'" ) );
-	if (RightMeshFinder.Succeeded())
-	{
-		RightHandMesh->SetStaticMesh( RightMeshFinder.Object );
-	}
+	//// Find and attach the static mesh for RightHandMesh
+	//static ConstructorHelpers::FObjectFinder<UStaticMesh> RightMeshFinder( TEXT( "/Script/Engine.StaticMesh'/Game/JH/Models/right_OculusTouch_v2Controller.right_OculusTouch_v2Controller'" ) );
+	//if (RightMeshFinder.Succeeded())
+	//{
+	//	RightHandMesh->SetStaticMesh( RightMeshFinder.Object );
+	//}
+
+	RightHandMesh->SetCollisionEnabled( ECollisionEnabled::QueryOnly );
+	RightHandMesh->SetCollisionObjectType( ECC_GameTraceChannel2 ); // You can define your own game trace channel
+	RightHandMesh->SetCollisionResponseToAllChannels( ECR_Ignore );
+	RightHandMesh->SetCollisionResponseToChannel( ECC_PhysicsBody , ECR_Overlap ); // Respond to overlap events with physics bodies
+
+	RightHandMesh->OnComponentBeginOverlap.AddDynamic( this , &AHidePlayer::OnHandMeshOverlapBegin );
 
 	// LeftController 오버랩 이벤트 활성화
 	LeftController->SetCollisionEnabled( ECollisionEnabled::QueryOnly );
@@ -346,17 +353,17 @@ void AHidePlayer::OnActionTryGrab()
 	}
 	//여기까진 잘 수행됨
 
-	else
+	for (const FOverlapResult& OverlapResult : HitObjects)
 	{
-		for (const FOverlapResult& OverlapResult : HitObjects)
-		{
-			//ACable* OverlappedCable = Cast<ACable>( OverlapResult.GetActor() );
-			if (CableActor && OverlapResult.GetComponent() == CableActor->EndSphereCollision)
+		//ACable* OverlappedCable = Cast<ACable>( OverlapResult.GetActor() );
+		if (CableActor && OverlapResult.GetComponent() == CableActor->EndSphereCollision)
 			{
 				// GrabbedObject에 OverlapResult에서 가져온 컴포넌트를 할당.
 				GrabbedObject = OverlapResult.GetComponent();
 				bIsGrabbed = true;
 				CableActor->HandleCableGrabbed( RightController );
+				//GrabbedObject->SetSimulatePhysics( false );
+				//GrabbedObject->SetCollisionEnabled( ECollisionEnabled::NoCollision );
 
 				// 케이블의 OwningPlayer를 현재 플레이어로 설정.(케이블의 Tick에 연결)
 				// CableActor->OwningPlayer = this;
@@ -367,7 +374,6 @@ void AHidePlayer::OnActionTryGrab()
 
 			}
 		}
-	}
 
 	if (!bIsGrabbed)
 	{
@@ -409,19 +415,17 @@ void AHidePlayer::OnActionUnGrab()
 		}
 		else
 		{
-			if (CableActor && GrabbedObject)
+			if (bIsGrabbed && CableActor && GrabbedObject == CableActor->EndSphereCollision)
 			{
-				if (CableActor->NewEndSphereCollision)
-				{
-					// EndSphereCollision을 RightController에서 분리
-					// CableActor->EndSphereCollision->DetachFromComponent( FDetachmentTransformRules::KeepWorldTransform );
+				// EndSphereCollision을 RightController에서 분리
+				// CableActor->EndSphereCollision->DetachFromComponent( FDetachmentTransformRules::KeepWorldTransform );
 
-					// 케이블의 끝 위치를 NewEndSphereCollision으로 설정
-					//CableActor->SetCableEndLocation( CableActor->NewEndSphereCollision->GetComponentLocation() );
-					CableActor->HandleCableReleased();
+				// 케이블의 끝 위치를 NewEndSphereCollision으로 설정
+				// //CableActor->SetCableEndLocation( CableActor->NewEndSphereCollision->GetComponentLocation() );
+				CableActor->HandleCableReleased();
 
-					UE_LOG( LogTemp , Warning , TEXT( "Cable released from RightController and end location updated." ) );
-				}
+				UE_LOG( LogTemp , Warning , TEXT( "Cable released from RightController and end location updated." ) );
+				
 			}
 		}
 	}
@@ -555,6 +559,17 @@ void AHidePlayer::UpdateTriggerStatus( bool bPressed )
 	{
 		// 버튼이 눌리지 않았을 때는 상호작용 상태를 리셋
 		bHasInteracted = false;
+	}
+}
+
+void AHidePlayer::OnHandMeshOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
+	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	if (OtherActor != nullptr && OtherActor != this)
+	{
+		if (CableActor)
+		{
+		}
 	}
 }
 

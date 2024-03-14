@@ -25,7 +25,7 @@ ACable::ACable()
 
 	// Initialize End Sphere Collision
 	EndSphereCollision = CreateDefaultSubobject<USphereComponent>( TEXT( "EndSphereCollision" ) );
-	EndSphereCollision->SetupAttachment( RootComponent );
+	EndSphereCollision->SetupAttachment( CableComponent );
 	EndSphereCollision->InitSphereRadius( 15.0f );
 	EndSphereCollision->SetCollisionProfileName( TEXT( "OverlapAllDynamic" ) );
 

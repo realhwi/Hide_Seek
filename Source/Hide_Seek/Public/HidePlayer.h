@@ -219,4 +219,8 @@ public:
 	UPROPERTY( EditAnywhere, BlueprintReadWrite )
 	ACable* CableActor;
 
+	UFUNCTION()
+	void OnHandMeshOverlapBegin( UPrimitiveComponent* OverlappedComp , AActor* OtherActor , UPrimitiveComponent* OtherComp , int32 OtherBodyIndex , bool bFromSweep , const FHitResult& SweepResult );
+
+
 };
