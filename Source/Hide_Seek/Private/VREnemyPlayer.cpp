@@ -19,7 +19,7 @@ AVREnemyPlayer::AVREnemyPlayer()
 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
-	GetCapsuleComponent()->InitCapsuleSize( 42.f , 96.0f );
+	GetCapsuleComponent()->InitCapsuleSize( 42.0f , 80.0f );
 
 	cameraComp = CreateDefaultSubobject<UCameraComponent>(TEXT("CameraComp"));
 	cameraComp->SetupAttachment(GetRootComponent());
