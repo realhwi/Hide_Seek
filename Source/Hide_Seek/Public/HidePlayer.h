@@ -135,7 +135,7 @@ public:
 
 	//회전 힘
 	UPROPERTY(EditAnywhere, Category = "Grab", meta = (AllowPrivateAccess = true))
-	float TorquePower = 1;
+	float TorquePower = 10;
 
 	// Player Enemy Overlap GameOver Event
 	UFUNCTION()
@@ -173,5 +173,13 @@ public:
 	// 생명 하나 감소, 이게 true가되면 텔레포트 하기
 	UPROPERTY( EditDefaultsOnly )
 	bool bLifeRemove = false;
+
+	// 인터렉션 실행 감지
+	UPROPERTY(EditAnywhere)
+	bool bHasInteracted = false;
+	UPROPERTY( EditAnywhere )
+	bool bIsTriggerPressed = false;
+
+	void UpdateTriggerStatus( bool bPressed );
 
 };
