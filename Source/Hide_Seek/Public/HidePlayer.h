@@ -7,6 +7,7 @@
 #include "InputActionValue.h"
 #include "InputMappingContext.h"
 #include "Interaction.h"
+#include "Components/WidgetComponent.h"
 #include "HidePlayer.generated.h"
 
 class ACable; // 전방 선언을 추가합니다.
@@ -186,6 +187,9 @@ public:
 	UPROPERTY( EditDefaultsOnly , BlueprintReadWrite )
 	TSubclassOf<class UPlayerUI> playerUIFactory;
 
+	UPROPERTY( VisibleAnywhere , BlueprintReadOnly , Category = "Components" )
+	UWidgetComponent* playerWidgetComponent;
+
 	UPROPERTY( EditDefaultsOnly )
 	class UGameOver* GameOverUI;
 
@@ -218,9 +222,5 @@ public:
 
 	UPROPERTY( EditAnywhere, BlueprintReadWrite )
 	ACable* CableActor;
-
-	UFUNCTION()
-	void OnHandMeshOverlapBegin( UPrimitiveComponent* OverlappedComp , AActor* OtherActor , UPrimitiveComponent* OtherComp , int32 OtherBodyIndex , bool bFromSweep , const FHitResult& SweepResult );
-
 
 };

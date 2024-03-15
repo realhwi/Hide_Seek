@@ -107,6 +107,14 @@
 			"SupportedTargetPlatforms": [
 				"Win64"
 			]
+		},
+		{
+			"Name": "VR_UI",
+			"Enabled": true,
+			"MarketplaceURL": "com.epicgames.launcher://ue/marketplace/product/d5fe7541aa6c46999af6db431ed8ed5f",
+			"SupportedTargetPlatforms": [
+				"Win64"
+			]
 		}
 	],
 	"TargetPlatforms": [

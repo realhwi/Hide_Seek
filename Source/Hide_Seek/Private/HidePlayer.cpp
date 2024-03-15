@@ -17,6 +17,7 @@
 #include "GameOver.h"
 #include "VREnemyPlayer.h"
 #include "Components/SphereComponent.h"
+#include "Components/WidgetComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
 
@@ -59,6 +60,23 @@ AHidePlayer::AHidePlayer()
 	RightHandMesh->SetupAttachment( GetMesh() , TEXT( "hand_rPoint" ) );
 	// RightHandMesh->SetupAttachment(RightController);
 
+	RightHandMesh->SetCollisionEnabled( ECollisionEnabled::QueryOnly );
+	RightHandMesh->SetCollisionObjectType( ECC_GameTraceChannel2 ); // You can define your own game trace channel
+	RightHandMesh->SetCollisionResponseToAllChannels( ECR_Ignore );
+	RightHandMesh->SetCollisionResponseToChannel( ECC_PhysicsBody , ECR_Overlap ); // Respond to overlap events with physics bodies
+
+	//RightHandMesh->OnComponentBeginOverlap.AddDynamic( this , &AHidePlayer::OnHandMeshOverlapBegin );
+
+	// LeftController 오버랩 이벤트 활성화
+	LeftController->SetCollisionEnabled( ECollisionEnabled::QueryOnly );
+	LeftController->SetCollisionObjectType( ECC_GameTraceChannel1 ); // 사용자 정의 충돌 채널 설정
+	LeftController->SetCollisionResponseToAllChannels( ECR_Ignore );
+	LeftController->SetCollisionResponseToChannel( ECC_Pawn , ECR_Overlap );
+
+	// 캡슐 컴포넌트 콜리전 설정
+	GetCapsuleComponent()->SetCollisionEnabled( ECollisionEnabled::QueryOnly );
+	GetCapsuleComponent()->SetCollisionResponseToChannel( ECollisionChannel::ECC_Pawn , ECollisionResponse::ECR_Overlap );
+
 	//static ConstructorHelpers::FObjectFinder<UStaticMesh> LeftMeshFinder( TEXT( "/Script/Engine.StaticMesh'/Game/JH/Models/left_OculusTouch_v2Controller.left_OculusTouch_v2Controller'" ) );
 	//if (LeftMeshFinder.Succeeded())
 	//{
@@ -72,30 +90,12 @@ AHidePlayer::AHidePlayer()
 	//	RightHandMesh->SetStaticMesh( RightMeshFinder.Object );
 	//}
 
-	RightHandMesh->SetCollisionEnabled( ECollisionEnabled::QueryOnly );
-	RightHandMesh->SetCollisionObjectType( ECC_GameTraceChannel2 ); // You can define your own game trace channel
-	RightHandMesh->SetCollisionResponseToAllChannels( ECR_Ignore );
-	RightHandMesh->SetCollisionResponseToChannel( ECC_PhysicsBody , ECR_Overlap ); // Respond to overlap events with physics bodies
-
-	RightHandMesh->OnComponentBeginOverlap.AddDynamic( this , &AHidePlayer::OnHandMeshOverlapBegin );
-
-	// LeftController 오버랩 이벤트 활성화
-	LeftController->SetCollisionEnabled( ECollisionEnabled::QueryOnly );
-	LeftController->SetCollisionObjectType( ECC_GameTraceChannel1 ); // 사용자 정의 충돌 채널 설정
-	LeftController->SetCollisionResponseToAllChannels( ECR_Ignore );
-	LeftController->SetCollisionResponseToChannel( ECC_Pawn , ECR_Overlap );
-
-	// 캡슐 컴포넌트 콜리전 설정
-	GetCapsuleComponent()->SetCollisionEnabled( ECollisionEnabled::QueryOnly );
-	GetCapsuleComponent()->SetCollisionResponseToChannel( ECollisionChannel::ECC_Pawn , ECollisionResponse::ECR_Overlap );
-
 	/*if(GetMesh())
 	{
 		static ConstructorHelpers::FObjectFinder<USkeletalMesh> MeshFinder( TEXT( "/Script/Engine.SkeletalMesh'/Game/Characters/Mannequins/Meshes/SKM_Quinn_Simple.SKM_Quinn_Simple'" ) );
 		GetMesh()->SetSkeletalMesh( MeshFinder.Object);
 	}*/
 
-	CableActor = nullptr;
 }
 
 
@@ -113,8 +113,7 @@ void AHidePlayer::BeginPlay()
 		playerUI = CreateWidget<UPlayerUI>( GetWorld() , playerUIFactory );
 		if (playerUI)
 		{
-			playerUI->AddToPlayerScreen();
-
+			playerUI->AddToViewport();
 			// 초기 생명값 설정을 위해 AddLife() 호출
 			for (int32 i = 0; i < maxLifeCount; i++)
 			{
@@ -305,6 +304,14 @@ void AHidePlayer::OnGrabInteract( AInteraction* InteractionActor )
 void AHidePlayer::OnActionTryGrab()
 {
 	UE_LOG( LogTemp , Warning , TEXT( "Grab" ) );
+
+	// RightController Null 체크
+	if (!RightController)
+	{
+		UE_LOG( LogTemp , Warning , TEXT( "RightController is null." ) );
+		return; // RightController가 null이면 여기서 함수 실행을 중단
+	}
+
 	FVector OverlapSphereCenter = RightController->GetComponentLocation();
 
 	//Overlap Sphere와 겹친 물건을 저장할 Array
@@ -353,31 +360,42 @@ void AHidePlayer::OnActionTryGrab()
 	}
 	//여기까진 잘 수행됨
 
-	for (const FOverlapResult& OverlapResult : HitObjects)
+	// CableActor와 MoveMesh의 유효성 검사
+	for (const FOverlapResult& Result : HitObjects)
 	{
-		//ACable* OverlappedCable = Cast<ACable>( OverlapResult.GetActor() );
-		if (CableActor && OverlapResult.GetComponent() == CableActor->EndSphereCollision)
+		// 여기에서는 CableActor를 직접 참조하지 않고, 각 오버랩된 컴포넌트가 MoveMesh인지 확인
+		UPrimitiveComponent* Component = Result.GetComponent();
+		if (Component && Component->GetOwner() && Component->GetOwner()->IsA( ACable::StaticClass() ))
+		{
+			ACable* OverlappedCable = Cast<ACable>( Component->GetOwner() );
+			if (OverlappedCable && OverlappedCable->MoveMesh == Component)
 			{
-				// GrabbedObject에 OverlapResult에서 가져온 컴포넌트를 할당.
-				GrabbedObject = OverlapResult.GetComponent();
+				// MoveMesh에 대한 처리
+				OverlapSphereCenter = RightController->GetComponentLocation();
+				FVector ForwardVector = RightController->GetForwardVector();
+				float DistanceFromController = 10.0f; // 예: 10cm 앞쪽
+
+				// MoveMesh를 컨트롤러로부터 DistanceFromController만큼 앞쪽으로 배치
+				FVector MoveMeshLocation = OverlapSphereCenter + (ForwardVector * DistanceFromController);
+				// MoveMesh의 회전을 컨트롤러와 동일하게 설정
+				FRotator MoveMeshRotation = RightController->GetComponentRotation();
+
+				// MoveMesh 이동 및 회전
+				OverlappedCable->MoveMesh->SetWorldLocationAndRotation( MoveMeshLocation , MoveMeshRotation );
+
+				// MoveMesh에 대한 처리
+				OverlappedCable->HandleCableGrabbed( RightController );
+				UE_LOG( LogTemp , Warning , TEXT( "Cable MoveMesh attached to RightController." ) );
 				bIsGrabbed = true;
-				CableActor->HandleCableGrabbed( RightController );
-				//GrabbedObject->SetSimulatePhysics( false );
-				//GrabbedObject->SetCollisionEnabled( ECollisionEnabled::NoCollision );
+				break; // 첫 번째 매칭되는 MoveMesh를 찾았으므로 루프 종료
+			}
 
-				// 케이블의 OwningPlayer를 현재 플레이어로 설정.(케이블의 Tick에 연결)
-				// CableActor->OwningPlayer = this;
-
-				UE_LOG( LogTemp , Warning , TEXT( "Attempting to attach Cable EndSphere to RightController." ) );
-				// EndSphereCollision을 RightController에 부착
-				// CableActor->EndSphereCollision->AttachToComponent( RightController , AttachmentRules );
-
+			if (OverlappedCable && OverlappedCable->NewEndStaticMesh == Component)
+			{
+				CableActor->HandleCableReleased();
+				UE_LOG( LogTemp , Warning , TEXT( "Cable released from RightController and end location updated." ) );
 			}
 		}
-
-	if (!bIsGrabbed)
-	{
-		UE_LOG( LogTemp , Warning , TEXT( "No object found to grab" ) );
 	}
 }
 
@@ -413,23 +431,20 @@ void AHidePlayer::OnActionUnGrab()
 			FVector AngularVelocity = Axis * FMath::DegreesToRadians( Angle ) / GetWorld()->DeltaTimeSeconds;
 			GrabbedObject->SetPhysicsAngularVelocityInRadians( AngularVelocity * ReducedTorquePower , true );
 		}
-		else
-		{
-			if (bIsGrabbed && CableActor && GrabbedObject == CableActor->EndSphereCollision)
-			{
-				// EndSphereCollision을 RightController에서 분리
-				// CableActor->EndSphereCollision->DetachFromComponent( FDetachmentTransformRules::KeepWorldTransform );
-
-				// 케이블의 끝 위치를 NewEndSphereCollision으로 설정
-				// //CableActor->SetCableEndLocation( CableActor->NewEndSphereCollision->GetComponentLocation() );
-				CableActor->HandleCableReleased();
-
-				UE_LOG( LogTemp , Warning , TEXT( "Cable released from RightController and end location updated." ) );
-				
-			}
-		}
+		//else
+		//{
+		//	//여기서 수행이 안됨
+		//	if (!CableActor)
+		//	{
+		//		UE_LOG( LogTemp , Warning , TEXT( "CableActor is null." ) );
+		//	}
+		//	else if (GrabbedObject && GrabbedObject == CableActor->NewEndStaticMesh)
+		//	{
+		//		CableActor->HandleCableReleased();
+		//		UE_LOG( LogTemp , Warning , TEXT( "Cable released from RightController and end location updated." ) );
+		//	}
+		//}
 	}
-	// 여기까지 잘 수행됨 
 	//Grab한 물건을 놓았기 때문에 변수에 nullptr 할당 	
 	bIsGrabbed = false;
 	GrabbedObject = nullptr;
@@ -453,16 +468,6 @@ void AHidePlayer::RightGrabbing()
 	//회전값 저장하기
 	PreviousGrabRotation = RightController->GetComponentQuat();
 
-	// 케이블 액터의 EndSphereCollision이 RightController에 올바르게 부착되어 있는지 확인
-	// 부착되어 있다면 EndSphereCollision의 위치를 업데이트
-	//if (CableActor && GrabbedObject == CableActor->EndSphereCollision)
-	//{
-	//	// RightController의 위치와 회전으로 EndSphereCollision의 위치와 회전을 업데이트
-	//	CableActor->EndSphereCollision->SetWorldLocationAndRotation( RightController->GetComponentLocation() , RightController->GetComponentRotation() );
-
-	//	FVector CurrentLocation = CableActor->EndSphereCollision->GetComponentLocation();
-	//	UE_LOG( LogTemp , Warning , TEXT( "EndSphereCollision Location after attachment: %s" ) , *CurrentLocation.ToString() );
-	//}
 }
 
 void AHidePlayer::PerformLineTrace()
@@ -562,16 +567,6 @@ void AHidePlayer::UpdateTriggerStatus( bool bPressed )
 	}
 }
 
-void AHidePlayer::OnHandMeshOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
-	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
-{
-	if (OtherActor != nullptr && OtherActor != this)
-	{
-		if (CableActor)
-		{
-		}
-	}
-}
 
 void AHidePlayer::OnActionTrigger()
 {

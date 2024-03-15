@@ -22,6 +22,9 @@ ACable::ACable()
 	CableComponent->SetupAttachment( StartStaticMesh );
 	CableComponent->CableWidth = 10.0f; // 케이블의 두께를 10으로 설정
 
+	// Initialize MoveMesh
+	MoveMesh = CreateDefaultSubobject<UStaticMeshComponent>( TEXT( "MoveMesh" ) );
+	MoveMesh->SetupAttachment( RootComponent );
 
 	// Initialize End Sphere Collision
 	EndSphereCollision = CreateDefaultSubobject<USphereComponent>( TEXT( "EndSphereCollision" ) );
@@ -47,17 +50,16 @@ void ACable::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// 케이블 컴포넌트를 StartStaticMesh에 붙입니다.
+	// 케이블 컴포넌트를 StartStaticMesh에 붙이기
 	CableComponent->SetupAttachment( StartStaticMesh );
 	
 	// 케이블의 끝을 스피어 콜리전에 연결
 	//CableComponent->EndLocation = EndSphereCollision->GetComponentLocation();
-	CableComponent->SetAttachEndToComponent( EndSphereCollision , NAME_None );
+	CableComponent->SetAttachEndToComponent( MoveMesh , NAME_None );
 
 
 	// 로그를 통해 케이블 컴포넌트와 스피어 콜리전 설정 확인
 	UE_LOG( LogTemp , Warning , TEXT( "CableComponent is attached to StartStaticMesh." ) );
-	UE_LOG( LogTemp , Warning , TEXT( "CableComponent EndLocation is set to: %s" ) , *CableComponent->EndLocation.ToString() );
 }
 
 // Called every frame
@@ -65,31 +67,55 @@ void ACable::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	 // 케이블이 잡혀 있는지 확인
-	if (OwningPlayer && OwningPlayer->IsGrab())
-	{
-		// 잡고 있는 오브젝트가 EndSphereCollision인지 확인
-		if (OwningPlayer->GetGrabbedObject() == EndSphereCollision)
-		{
-			// EndSphereCollision의 현재 위치로 케이블의 끝 위치를 업데이트
-			CableComponent->EndLocation = EndSphereCollision->GetComponentLocation();
-			// 로그를 통해 업데이트된 위치를 확인
-			UE_LOG( LogTemp , Warning , TEXT( "Cable end location updated to: %s" ) , *CableComponent->EndLocation.ToString() );
-		}
-	}
 }
 
 
-void ACable::HandleCableGrabbed(UPrimitiveComponent* HandMesh )
+void ACable::HandleCableGrabbed(UPrimitiveComponent* RightController )
 {
-	FName SocketName = FName( TEXT( "hand_rPoint" ) ); // Name of the socket
-	EndSphereCollision->AttachToComponent( HandMesh , FAttachmentTransformRules::SnapToTargetNotIncludingScale , SocketName );
+
+	// RightController의 유효성 검사
+	if (!RightController)
+	{
+		UE_LOG( LogTemp , Error , TEXT( "RightController is nullptr." ) );
+		return;
+	}
+
+	MoveMesh->AttachToComponent( RightController , FAttachmentTransformRules::SnapToTargetIncludingScale , FName( TEXT( "Hand_rPoint" ) ) );
+	UE_LOG( LogTemp , Warning , TEXT( "Cable MoveMesh attached to RightController." ) );
+
+	//MoveMesh->SetRelativeLocation( FVector( 0 , 0 , 0 ) );
+	//MoveMesh->SetRelativeRotation( FRotator( 0 , 0 , 0 ) );
 }
 
 void ACable::HandleCableReleased()
 {
-	EndSphereCollision->DetachFromComponent( FDetachmentTransformRules::KeepWorldTransform ); // 현재 부착된 컴포넌트에서 EndSphereCollision 분리
-	CableComponent->EndLocation = NewEndSphereCollision->GetComponentLocation(); // 케이블의 끝 위치를 NewEndSphereCollision의 위치로 업데이트
+	// CableComponent가 유효한지 확인
+	if (!CableComponent)
+	{
+		UE_LOG( LogTemp , Error , TEXT( "CableComponent is nullptr." ) );
+		return;
+	}
+
+	// NewEndStaticMesh가 유효한지 확인
+	if (!NewEndStaticMesh)
+	{
+		UE_LOG( LogTemp , Error , TEXT( "NewEndStaticMesh is nullptr." ) );
+		return;
+	}
+
+	// MoveMesh가 있는지 확인
+	if (!MoveMesh)
+	{
+		UE_LOG( LogTemp , Error , TEXT( "MoveMesh is nullptr." ) );
+		return;
+	}
+
+	// MoveMesh를 새로운 끝 지점에 연결
+	CableComponent->SetAttachEndToComponent( NewEndStaticMesh , NAME_None );
+	UE_LOG( LogTemp , Warning , TEXT( "Cable released from RightController and end location updated to NewEndStaticMesh." ) );
+
+	// MoveMesh->DetachFromComponent( FDetachmentTransformRules::KeepWorldTransform );
+	// CableComponent->EndLocation = NewEndSphereCollision->GetComponentLocation();
 }
 
 
