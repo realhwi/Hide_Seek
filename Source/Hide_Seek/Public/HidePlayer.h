@@ -207,7 +207,7 @@ public:
 	void OnLifeDepleted();
 
 	// 생명 하나 감소, 이게 true가되면 텔레포트 하기
-	UPROPERTY( EditDefaultsOnly )
+	UPROPERTY( EditAnywhere, BlueprintReadWrite )
 	bool bLifeRemove = false;
 
 	// 인터렉션 실행 감지
