@@ -134,6 +134,8 @@ public:
 	UPROPERTY( EditAnywhere , BlueprintReadWrite )
 	float addEscapeLockTime;
 
-	UPROPERTY( EditAnywhere , BlueprintReadWrite )
+	UPROPERTY( EditAnywhere , BlueprintReadWrite, Replicated )
 	bool isHandUP;
+
+	virtual void GetLifetimeReplicatedProps( TArray<FLifetimeProperty>& OutLifetimeProps ) const override;
 };

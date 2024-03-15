@@ -12,6 +12,7 @@
 #include "Components/SphereComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/KismetSystemLibrary.h"
+#include "Net/UnrealNetwork.h"
 
 // Sets default values
 AVREnemyPlayer::AVREnemyPlayer()
@@ -97,7 +98,7 @@ void AVREnemyPlayer::Tick(float DeltaTime)
 				{
 					subSystem->AddMappingContext( IMC_VREnemyInput , 0 );
 					//bHasController = true;
-					UE_LOG( LogTemp , Warning , TEXT( "has controller" ))
+					//UE_LOG( LogTemp , Warning , TEXT( "has controller" ))
 
 				}
 			}
@@ -241,3 +242,9 @@ void AVREnemyPlayer::ThirdSkillActive()
 //	moveSpeed = 600;
 //}
 
+void AVREnemyPlayer::GetLifetimeReplicatedProps( TArray<FLifetimeProperty>& OutLifetimeProps ) const
+{
+	Super::GetLifetimeReplicatedProps( OutLifetimeProps );
+
+	DOREPLIFETIME(AVREnemyPlayer, isHandUP)
+}
