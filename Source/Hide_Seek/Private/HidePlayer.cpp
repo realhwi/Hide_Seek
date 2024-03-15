@@ -556,6 +556,11 @@ void AHidePlayer::OnLifeDepleted()
 	}
 }
 
+bool AHidePlayer::LifeRemove()
+{
+	return bLifeRemove;
+}
+
 void AHidePlayer::UpdateTriggerStatus( bool bPressed )
 {
 	// 트리거 버튼 상태 업데이트
