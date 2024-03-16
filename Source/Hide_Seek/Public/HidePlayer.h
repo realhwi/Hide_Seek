@@ -51,6 +51,8 @@ public:
 	class UInputAction* IA_Run;
 	UPROPERTY( EditAnywhere , BlueprintReadOnly , Category = Input , meta = (AllowPrivateAccess = "true") )
 	class UInputAction* IA_Crouch;
+	/*UPROPERTY( EditAnywhere , BlueprintReadOnly , Category = Input , meta = (AllowPrivateAccess = "true") )
+	class UInputAction* IA_CheckGrab;*/
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Settings | Player")
 	class UCameraComponent* CameraComponent;
@@ -108,6 +110,10 @@ public:
 	void RightGrabbing();
 	//이걸로 누름/땜 상태를 제어할 수 있음
 	bool bIsGrabbed = false;
+	bool bIsSecondGrabAttempted = false;
+
+	UPROPERTY( EditAnywhere , BlueprintReadWrite )
+	ACable* CableActor = nullptr;
 
 	//Trigger Input 버튼 누를때 실행됨
 	UFUNCTION(BlueprintCallable)
@@ -128,6 +134,12 @@ public:
 
 	UFUNCTION()
 	void OnIAUnCrouch( const FInputActionValue& Value );
+
+	UFUNCTION()
+	void CheckOverlapWithNewEndStaticMesh();
+
+	UFUNCTION()
+	void AttemptToGrabCable( const TArray<FOverlapResult>& OverlapResults );
 
 	// 쑤그리기 
 	UPROPERTY( EditAnywhere , BlueprintReadWrite )
@@ -222,8 +234,5 @@ public:
 	bool bHasInteracted = false;
 
 	void UpdateTriggerStatus( bool bPressed );
-
-	UPROPERTY( EditAnywhere, BlueprintReadWrite )
-	ACable* CableActor;
 
 };

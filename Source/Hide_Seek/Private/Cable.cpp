@@ -83,8 +83,6 @@ void ACable::HandleCableGrabbed(UPrimitiveComponent* RightController )
 	MoveMesh->AttachToComponent( RightController , FAttachmentTransformRules::SnapToTargetNotIncludingScale );
 
 	//FTransform t = this->OwningPlayer->GetMesh()->GetSocketTransform( FName( TEXT( "Hand_rPoint" )));
-
-
 	//MoveMesh->SetWorldLocationAndRotation(t.GetLocation(), t.Rotator());
 
 	UE_LOG( LogTemp , Warning , TEXT( "Cable MoveMesh attached to RightController." ) );
@@ -92,25 +90,10 @@ void ACable::HandleCableGrabbed(UPrimitiveComponent* RightController )
 
 void ACable::HandleCableReleased()
 {
-	// CableComponent가 유효한지 확인
-	if (!CableComponent)
+	// MoveMesh와 RightController의 연결 해제
+	if (MoveMesh)
 	{
-		UE_LOG( LogTemp , Error , TEXT( "CableComponent is nullptr." ) );
-		return;
-	}
-
-	// NewEndStaticMesh가 유효한지 확인
-	if (!NewEndStaticMesh)
-	{
-		UE_LOG( LogTemp , Error , TEXT( "NewEndStaticMesh is nullptr." ) );
-		return;
-	}
-
-	// MoveMesh가 있는지 확인
-	if (!MoveMesh)
-	{
-		UE_LOG( LogTemp , Error , TEXT( "MoveMesh is nullptr." ) );
-		return;
+		MoveMesh->DetachFromComponent( FDetachmentTransformRules::KeepWorldTransform );
 	}
 
 	// MoveMesh를 새로운 끝 지점에 연결
