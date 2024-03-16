@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "Delegates/Delegate.h"
 #include "Cable.generated.h"
 
 class AHidePlayer;
@@ -61,4 +62,11 @@ public:
 
 	UPROPERTY( EditAnywhere , BlueprintReadWrite )
 	AHidePlayer* OwningPlayer;
+
+	UPROPERTY( EditAnywhere , Category = "Materials" )
+	UMaterialInterface* NewEndMaterial;
+
+	UPROPERTY( EditAnywhere , Category = "Materials" )
+	UMaterialInterface* StartMaterial;
+
 };

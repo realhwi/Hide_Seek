@@ -180,7 +180,6 @@ void AHidePlayer::SetupPlayerInputComponent( UInputComponent* PlayerInputCompone
 	{
 		InputSystem->BindAction( IA_Move , ETriggerEvent::Triggered , this , &AHidePlayer::Move );
 		InputSystem->BindAction( IA_Look , ETriggerEvent::Triggered , this , &AHidePlayer::Look );
-		// InputSystem->BindAction( IA_CheckGrab , ETriggerEvent::Started , this , &AHidePlayer::CheckOverlapWithNewEndStaticMesh );
 		InputSystem->BindAction( IA_Grab , ETriggerEvent::Started , this , &AHidePlayer::OnActionTryGrab );
 		InputSystem->BindAction( IA_Grab , ETriggerEvent::Completed , this , &AHidePlayer::OnActionUnGrab );
 		InputSystem->BindAction( IA_Trigger , ETriggerEvent::Started , this , &AHidePlayer::OnActionTrigger );
@@ -470,15 +469,6 @@ void AHidePlayer::OnActionUnGrab()
 			FVector AngularVelocity = Axis * FMath::DegreesToRadians( Angle ) / GetWorld()->DeltaTimeSeconds;
 			GrabbedObject->SetPhysicsAngularVelocityInRadians( AngularVelocity * ReducedTorquePower , true );
 		}
-		//else
-		//{
-		//	//여기서 수행이 안됨
-		//	if (CableActor && GrabbedObject && GrabbedObject == CableActor->NewEndStaticMesh)
-		//	{
-		//		CableActor->HandleCableReleased();
-		//		UE_LOG( LogTemp , Warning , TEXT( "Cable released from RightController and end location updated." ) );
-		//	}
-		//}
 	}
 	//if (CableActor && bIsGrabbed)
 	//{

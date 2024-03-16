@@ -41,8 +41,6 @@ ACable::ACable()
 	NewEndSphereCollision->SetupAttachment( NewEndStaticMesh );
 	NewEndSphereCollision->InitSphereRadius( 15.0f );
 	NewEndSphereCollision->SetCollisionProfileName( TEXT( "OverlapAllDynamic" ) );
-
-	// EndSphereCollision->OnComponentBeginOverlap.AddDynamic( this , &ACable::OnCableEndOverlap );
 }
 
 // Called when the game starts or when spawned
@@ -72,7 +70,6 @@ void ACable::Tick(float DeltaTime)
 
 void ACable::HandleCableGrabbed(UPrimitiveComponent* RightController )
 {
-
 	// RightController의 유효성 검사
 	if (!RightController)
 	{
@@ -100,8 +97,15 @@ void ACable::HandleCableReleased()
 	CableComponent->SetAttachEndToComponent( NewEndStaticMesh , NAME_None );
 	UE_LOG( LogTemp , Warning , TEXT( "Cable released from RightController and end location updated to NewEndStaticMesh." ) );
 
-	// MoveMesh->DetachFromComponent( FDetachmentTransformRules::KeepWorldTransform );
-	// CableComponent->EndLocation = NewEndSphereCollision->GetComponentLocation();
+	if (NewEndStaticMesh && NewEndMaterial)
+	{
+		NewEndStaticMesh->SetMaterial( 0 , NewEndMaterial );
+	}
+
+	if (StartStaticMesh && StartMaterial)
+	{
+		StartStaticMesh->SetMaterial( 0 , StartMaterial );
+	}
 }
 
 
