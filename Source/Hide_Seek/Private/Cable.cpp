@@ -4,7 +4,6 @@
 #include "Cable.h"
 #include "CableComponent.h"
 #include "HidePlayer.h"
-#include "Components/SphereComponent.h"
 
 // Sets default values
 ACable::ACable()
@@ -16,31 +15,40 @@ ACable::ACable()
 	// Initialize Start Static Mesh
 	StartStaticMesh = CreateDefaultSubobject<UStaticMeshComponent>( TEXT( "StartStaticMesh" ) );
 	StartStaticMesh->SetupAttachment( RootComponent );
+	StartMesh1 = CreateDefaultSubobject<UStaticMeshComponent>( TEXT( "StartMesh1" ) );
+	StartMesh1->SetupAttachment( RootComponent );
+	StartMesh2 = CreateDefaultSubobject<UStaticMeshComponent>( TEXT( "StartMesh2" ) );
+	StartMesh2->SetupAttachment( RootComponent );
 
 	// 케이블 컴포넌트 및 기타 컴포넌트 초기화
 	CableComponent = CreateDefaultSubobject<UCableComponent>( TEXT( "CableComponent" ) );
 	CableComponent->SetupAttachment( StartStaticMesh );
 	CableComponent->CableWidth = 10.0f; // 케이블의 두께를 10으로 설정
 
+	CableComp1 = CreateDefaultSubobject<UCableComponent>( TEXT( "CableComp1" ) );
+	CableComp1->SetupAttachment( StartMesh1 );
+	CableComp1->CableWidth = 10.0f; // 케이블의 두께를 10으로 설정
+
+	CableComp2 = CreateDefaultSubobject<UCableComponent>( TEXT( "CableComp2" ) );
+	CableComp2->SetupAttachment( StartMesh2 );
+	CableComp2->CableWidth = 10.0f; // 케이블의 두께를 10으로 설정
+
 	// Initialize MoveMesh
 	MoveMesh = CreateDefaultSubobject<UStaticMeshComponent>( TEXT( "MoveMesh" ) );
 	MoveMesh->SetupAttachment( RootComponent );
-
-	// Initialize End Sphere Collision
-	EndSphereCollision = CreateDefaultSubobject<USphereComponent>( TEXT( "EndSphereCollision" ) );
-	EndSphereCollision->SetupAttachment( CableComponent );
-	EndSphereCollision->InitSphereRadius( 15.0f );
-	EndSphereCollision->SetCollisionProfileName( TEXT( "OverlapAllDynamic" ) );
+	MoveMesh1 = CreateDefaultSubobject<UStaticMeshComponent>( TEXT( "MoveMesh1" ) );
+	MoveMesh1->SetupAttachment( RootComponent );
+	MoveMesh2 = CreateDefaultSubobject<UStaticMeshComponent>( TEXT( "MoveMesh2" ) );
+	MoveMesh2->SetupAttachment( RootComponent );
 
 	// Initialize New End Static Mesh
 	NewEndStaticMesh = CreateDefaultSubobject<UStaticMeshComponent>( TEXT( "NewEndStaticMesh" ) );
 	NewEndStaticMesh->SetupAttachment( RootComponent );
+	NewEndMesh1 = CreateDefaultSubobject<UStaticMeshComponent>( TEXT( "NewEndMesh1" ) );
+	NewEndMesh1->SetupAttachment( RootComponent );
+	NewEndMesh2 = CreateDefaultSubobject<UStaticMeshComponent>( TEXT( "NewEndMesh2" ) );
+	NewEndMesh2->SetupAttachment( RootComponent );
 
-	// Initialize New End Sphere Collision
-	NewEndSphereCollision = CreateDefaultSubobject<USphereComponent>( TEXT( "NewEndSphereCollision" ) );
-	NewEndSphereCollision->SetupAttachment( NewEndStaticMesh );
-	NewEndSphereCollision->InitSphereRadius( 15.0f );
-	NewEndSphereCollision->SetCollisionProfileName( TEXT( "OverlapAllDynamic" ) );
 }
 
 // Called when the game starts or when spawned
@@ -50,25 +58,26 @@ void ACable::BeginPlay()
 
 	// 케이블 컴포넌트를 StartStaticMesh에 붙이기
 	CableComponent->SetupAttachment( StartStaticMesh );
-	
+	CableComp1->SetupAttachment( StartMesh1 );
+	CableComp2->SetupAttachment( StartMesh2 );
+
 	// 케이블의 끝을 스피어 콜리전에 연결
-	//CableComponent->EndLocation = EndSphereCollision->GetComponentLocation();
 	CableComponent->SetAttachEndToComponent( MoveMesh , NAME_None );
+	CableComp1->SetAttachEndToComponent( MoveMesh1 , NAME_None );
+	CableComp2->SetAttachEndToComponent( MoveMesh2 , NAME_None );
 
+	// 초기 위치 및 회전값 저장
+	InitialMoveMeshLocation = MoveMesh->GetComponentLocation();
+	InitialMoveMeshRotation = MoveMesh->GetComponentRotation();
 
-	// 로그를 통해 케이블 컴포넌트와 스피어 콜리전 설정 확인
-	UE_LOG( LogTemp , Warning , TEXT( "CableComponent is attached to StartStaticMesh." ) );
+	InitialMoveMesh1Location = MoveMesh1->GetComponentLocation();
+	InitialMoveMesh1Rotation = MoveMesh1->GetComponentRotation();
+
+	InitialMoveMesh2Location = MoveMesh2->GetComponentLocation();
+	InitialMoveMesh2Rotation = MoveMesh2->GetComponentRotation();
 }
 
-// Called every frame
-void ACable::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-
-}
-
-
-void ACable::HandleCableGrabbed(UPrimitiveComponent* RightController )
+void ACable::HandleCableGrabbed( UPrimitiveComponent* RightController , UPrimitiveComponent* ComponentToAttach )
 {
 	// RightController의 유효성 검사
 	if (!RightController)
@@ -77,37 +86,131 @@ void ACable::HandleCableGrabbed(UPrimitiveComponent* RightController )
 		return;
 	}
 
-	MoveMesh->AttachToComponent( RightController , FAttachmentTransformRules::SnapToTargetNotIncludingScale );
+	// ComponentToAttach를 RightController에 부착
+	ComponentToAttach->AttachToComponent( RightController , FAttachmentTransformRules::SnapToTargetNotIncludingScale );
 
-	//FTransform t = this->OwningPlayer->GetMesh()->GetSocketTransform( FName( TEXT( "Hand_rPoint" )));
-	//MoveMesh->SetWorldLocationAndRotation(t.GetLocation(), t.Rotator());
+	// 현재 그랩한 컴포넌트로 설정
+	CurrentlyGrabbedComp = ComponentToAttach;
+	UE_LOG( LogTemp , Warning , TEXT( "Component attached to RightController." ) );
 
-	UE_LOG( LogTemp , Warning , TEXT( "Cable MoveMesh attached to RightController." ) );
 }
 
-void ACable::HandleCableReleased()
+void ACable::HandleCableReleased( UPrimitiveComponent* NewEndComponent )
 {
-	// MoveMesh와 RightController의 연결 해제
-	if (MoveMesh)
+	if (!CurrentlyGrabbedComp || !NewEndComponent)
 	{
-		MoveMesh->DetachFromComponent( FDetachmentTransformRules::KeepWorldTransform );
+		UE_LOG( LogTemp , Warning , TEXT( "Either grabbed component or NewEndComponent is null." ) );
+		return;
+	}
+	CurrentlyGrabbedComp->DetachFromComponent( FDetachmentTransformRules::KeepWorldTransform );
+	CurrentlyGrabbedComp->AttachToComponent( NewEndComponent , FAttachmentTransformRules::SnapToTargetNotIncludingScale );
+
+
+	// 케이블 컴포넌트의 연결 상태 확인 및 업데이트
+	bool connectionUpdated = false;
+	if (CurrentlyGrabbedCableComponent == CableComponent && NewEndComponent == NewEndStaticMesh)
+	{
+		bIsCableComponentConnected = true;
+		connectionUpdated = true;
+	}
+	else if (CurrentlyGrabbedCableComponent == CableComp1 && NewEndComponent == NewEndMesh1)
+	{
+		bIsCableComp1Connected = true;
+		connectionUpdated = true;
+	}
+	else if (CurrentlyGrabbedCableComponent == CableComp2 && NewEndComponent == NewEndMesh2)
+	{
+		bIsCableComp2Connected = true;
+		connectionUpdated = true;
 	}
 
-	// MoveMesh를 새로운 끝 지점에 연결
-	CableComponent->SetAttachEndToComponent( NewEndStaticMesh , NAME_None );
-	UE_LOG( LogTemp , Warning , TEXT( "Cable released from RightController and end location updated to NewEndStaticMesh." ) );
-
-	if (NewEndStaticMesh && NewEndMaterial)
+	// 연결 상태가 업데이트되었다면, 연결 완료 횟수 업데이트
+	if (connectionUpdated)
 	{
-		NewEndStaticMesh->SetMaterial( 0 , NewEndMaterial );
+		ConnectionCompletedCount++;
 	}
 
-	if (StartStaticMesh && StartMaterial)
+	// 모든 케이블 컴포넌트의 연결이 완료되었는지 확인
+	if (ConnectionCompletedCount == TotalCableComponents)
 	{
-		StartStaticMesh->SetMaterial( 0 , StartMaterial );
+		// 모든 연결이 완료되었으므로, 머터리얼 변경 또는 초기 위치로 복귀하는 로직 호출
+		CheckAndApplyMaterial();
+
+		// 연결 상태 변수 및 연결 완료 횟수 초기화
+		ResetConnectionStates();
 	}
 }
 
+void ACable::ResetConnectionStates()
+{
+	// 연결 상태 변수 및 연결 완료 횟수 초기화
+	bIsCableComponentConnected = false;
+	bIsCableComp1Connected = false;
+	bIsCableComp2Connected = false;
+	ConnectionCompletedCount = 0;
+}
+
+void ACable::CheckAndApplyMaterial()
+{
+	if (bIsCableComponentConnected && bIsCableComp1Connected && bIsCableComp2Connected)
+	{
+		ApplyMaterials();
+	}
+	else
+	{
+		ResetToInitialPositions();
+	}
+}
+
+void ACable::ApplyMaterials()
+{
+	// 세 컴포넌트 세트가 각각 올바르게 연결된 경우, 머터리얼 변경
+	StartStaticMesh->SetMaterial( 0 , Material1 );
+	CableComponent->SetMaterial( 0 , Material1 );
+	NewEndStaticMesh->SetMaterial( 0 , Material1 );
+
+	StartMesh1->SetMaterial( 0 , Material2 );
+	CableComp1->SetMaterial( 0 , Material2 );
+	NewEndMesh1->SetMaterial( 0 , Material2 );
+
+	StartMesh2->SetMaterial( 0 , Material3 );
+	CableComp2->SetMaterial( 0 , Material3 );
+	NewEndMesh2->SetMaterial( 0 , Material3 );
+}
+
+void ACable::ResetToInitialPositions()
+{
+	// NewEndStaticMesh, NewEndMesh1, NewEndMesh2에 붙어 있던 End 지점을 떼는 작업
+	if (bIsCableComponentConnected)
+	{
+		CableComponent->DetachFromComponent( FDetachmentTransformRules::KeepWorldTransform );
+		// CableComponent를 MoveMesh로 다시 Attach
+		CableComponent->AttachToComponent( MoveMesh , FAttachmentTransformRules::SnapToTargetNotIncludingScale );
+	}
+
+	if (bIsCableComp1Connected)
+	{
+		CableComp1->DetachFromComponent( FDetachmentTransformRules::KeepWorldTransform );
+		// CableComp1을 MoveMesh1로 다시 Attach
+		CableComp1->AttachToComponent( MoveMesh1 , FAttachmentTransformRules::SnapToTargetNotIncludingScale );
+	}
+
+	if (bIsCableComp2Connected)
+	{
+		CableComp2->DetachFromComponent( FDetachmentTransformRules::KeepWorldTransform );
+		// CableComp2를 MoveMesh2로 다시 Attach
+		CableComp2->AttachToComponent( MoveMesh2 , FAttachmentTransformRules::SnapToTargetNotIncludingScale );
+	}
+
+	MoveMesh->SetWorldLocation( InitialMoveMeshLocation );
+	MoveMesh1->SetWorldLocation( InitialMoveMesh1Location );
+	MoveMesh2->SetWorldLocation( InitialMoveMesh2Location );
+
+	// 연결 상태 변수를 초기화하여 다시 연결할 수 있도록 함
+	bIsCableComponentConnected = false;
+	bIsCableComp1Connected = false;
+	bIsCableComp2Connected = false;
+}
 
 
 
