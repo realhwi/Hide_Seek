@@ -16,8 +16,6 @@
 #include "PlayerUI.h"
 #include "GameOver.h"
 #include "VREnemyPlayer.h"
-#include "Components/SphereComponent.h"
-#include "Components/WidgetComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
 
@@ -212,14 +210,6 @@ void AHidePlayer::Move( const FInputActionValue& Value )
 	// 이동 입력을 추가
 	AddMovementInput( MovementDirection , 25.0f );
 
-	//PC 일때 사용
-	/*AddMovementInput( GetActorForwardVector() , MovementVector.X );
-	AddMovementInput( GetActorRightVector() , MovementVector.Y );*/
-
-	//VR 일때 카메라 기준으로 해야함
-	//예) GetComponentForward??
-	/*AddMovementInput(CameraComponent->GetForwardVector(), MovementVector.X);
-	AddMovementInput(CameraComponent->GetRightVector(), MovementVector.Y);*/
 }
 
 void AHidePlayer::Look( const FInputActionValue& Value )
@@ -305,56 +295,63 @@ void AHidePlayer::OnGrabInteract( AInteraction* InteractionActor )
 void AHidePlayer::CheckOverlapWithNewEndStaticMesh()
 {
 	UE_LOG( LogTemp , Warning , TEXT( "CheckOverlapWithNewEndStaticMesh called. bIsGrabbed: %s, CableActor: %s" ) , bIsGrabbed ? TEXT( "true" ) : TEXT( "false" ) , CableActor ? *CableActor->GetName() : TEXT( "nullptr" ) );
-	if (!bIsSecondGrabAttempted || !CableActor || !CableActor->MoveMesh) return;
+	if (!bIsSecondGrabAttempted || !CableActor || CableActor->CableSetups.IsEmpty()) return;
+
+	FCableSetup& FirstCableSetup = CableActor->CableSetups[0];
 
 	TArray<FOverlapResult> OverlapResults;
 	FCollisionQueryParams CollisionParams;
 	CollisionParams.AddIgnoredActor( this );
-	bool bIsOverlap = GetWorld()->OverlapMultiByChannel( OverlapResults , CableActor->MoveMesh->GetComponentLocation() , FQuat::Identity , ECC_Visibility , FCollisionShape::MakeSphere( GrabRange ) , CollisionParams );
 
-	for (const FOverlapResult& Result : OverlapResults)
+	for (FCableSetup& CableSetup : CableActor->CableSetups)
 	{
-		if (Result.GetActor() == CableActor && Result.Component == CableActor->NewEndStaticMesh)
+		bool bIsOverlap = GetWorld()->OverlapMultiByChannel( OverlapResults , CableSetup.EndComp->GetComponentLocation() , FQuat::Identity , ECC_Visibility , FCollisionShape::MakeSphere( GrabRange ) , CollisionParams );
+
+		if (bIsOverlap)
 		{
-			CableActor->HandleCableReleased();
-			UE_LOG( LogTemp , Warning , TEXT( "Cable released from RightController and attached to NewEndStaticMesh." ) );
-			bIsGrabbed = false; // Grab 상태 초기화
-			bIsSecondGrabAttempted = false; // 두 번째 그랩 시도 플래그 초기화
-			break;
+			for (const FOverlapResult& Result : OverlapResults)
+			{
+				if (Result.Component == CableSetup.EndComp)
+				{
+					CableActor->HandleCableReleased();
+					UE_LOG( LogTemp , Warning , TEXT( "Cable released from RightController and attached to %s." ) , *CableSetup.EndComp->GetName() );
+					bIsGrabbed = false; // Grab 상태 초기화
+					bIsSecondGrabAttempted = false; // 두 번째 그랩 시도 플래그 초기화
+					return; // 첫 번째 오버랩된 케이블 처리 후 반복 중단
+				}
+			}
 		}
 	}
 }
 
 void AHidePlayer::AttemptToGrabCable( const TArray<FOverlapResult>& OverlapResults )
 {
-	// CableActor와 MoveMesh의 유효성 검사
-	for (const FOverlapResult& Result : OverlapResults) // 여기를 OverlapResults로 변경
-	{
-		// 여기에서는 CableActor를 직접 참조하지 않고, 각 오버랩된 컴포넌트가 MoveMesh인지 확인
-		UPrimitiveComponent* Component = Result.GetComponent();
-		if (Component && Component->GetOwner() && Component->GetOwner()->IsA( ACable::StaticClass() ))
-		{
-			ACable* OverlappedCable = Cast<ACable>( Component->GetOwner() );
-			if (OverlappedCable && OverlappedCable->MoveMesh == Component)
-			{
-				// MoveMesh에 대한 처리
-				FVector OverlapSphereCenter = RightController->GetComponentLocation();
-				FVector ForwardVector = RightController->GetForwardVector();
-				float DistanceFromController = 0.0f; // 예: 10cm 앞쪽
+	// CableActor의 유효성 검사
+	if (!CableActor) return;
 
+	FVector OverlapSphereCenter = RightController->GetComponentLocation();
+	FVector ForwardVector = RightController->GetForwardVector();
+	float DistanceFromController = 0.0f; // 예: 10cm 앞쪽
+
+	// CableActor 내의 모든 MoveMesh에 대해 검사
+	for (FCableSetup& CableSetup : CableActor->CableSetups)
+	{
+		// 오버랩된 컴포넌트가 MoveMesh인지 확인
+		for (const FOverlapResult& Result : OverlapResults)
+		{
+			if (Result.GetComponent() == CableSetup.MoveComp)
+			{
 				// MoveMesh를 컨트롤러로부터 DistanceFromController만큼 앞쪽으로 배치
 				FVector MoveMeshLocation = OverlapSphereCenter + (ForwardVector * DistanceFromController);
-				// MoveMesh의 회전을 컨트롤러와 동일하게 설정
 				FRotator MoveMeshRotation = RightController->GetComponentRotation();
 
 				// MoveMesh 이동 및 회전
-				OverlappedCable->MoveMesh->SetWorldLocationAndRotation( MoveMeshLocation , MoveMeshRotation );
+				CableSetup.MoveComp->SetWorldLocationAndRotation( MoveMeshLocation , MoveMeshRotation );
 
 				// MoveMesh에 대한 처리
-				OverlappedCable->HandleCableGrabbed( RightController );
+				CableActor->HandleCableGrabbed( RightController );
 				UE_LOG( LogTemp , Warning , TEXT( "Cable MoveMesh attached to RightController." ) );
 
-				CableActor = OverlappedCable; // CableActor 할당
 				bIsGrabbed = true;
 				bIsSecondGrabAttempted = false;
 				return; // 첫 번째 매칭되는 MoveMesh를 찾았으므로 루프 종료
@@ -487,11 +484,11 @@ void AHidePlayer::OnActionUnGrab()
 	//	for (const FOverlapResult& Result : OverlapResults)
 	//	{
 	//	// CableActor의 NewEndSphereCollision 또는 NewEndStaticMesh와 오버랩되었는지 확인
-	//		if (Result.GetActor() == CableActor && (Result.Component == CableActor->NewEndStaticMesh))
+	//		if (Result.GetActor() == CableActor && (Result.Component == CableActor->RedEndMesh))
 	//		{
 	//			// 이 경우에만 CableActor의 HandleCableReleased를 호출
 	//			CableActor->HandleCableReleased();
-	//			UE_LOG( LogTemp , Warning , TEXT( "Cable released from RightController and overlap with NewEndSphereCollision or NewEndStaticMesh." ) );
+	//			UE_LOG( LogTemp , Warning , TEXT( "Cable released from RightController and overlap with NewEndSphereCollision or RedEndMesh." ) );
 	//			break; // 첫 번째 매칭되는 오브젝트를 찾았으므로 루프 종료
 	//		}
 	//	}

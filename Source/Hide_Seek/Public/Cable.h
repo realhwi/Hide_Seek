@@ -4,10 +4,32 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "Delegates/Delegate.h"
+#include "CableComponent.h"
+#include "Components/SphereComponent.h"
+#include "Components/StaticMeshComponent.h"
 #include "Cable.generated.h"
 
-class AHidePlayer;
+
+USTRUCT( Atomic,BlueprintType )
+struct FCableSetup
+{
+	GENERATED_BODY()
+
+	UPROPERTY( EditAnywhere , BlueprintReadWrite )
+	UCableComponent* CableComp;
+
+	UPROPERTY( EditAnywhere , BlueprintReadWrite )
+	UStaticMeshComponent* StartComp;
+
+	UPROPERTY( EditAnywhere , BlueprintReadWrite )
+	UStaticMeshComponent* MoveComp;
+
+	UPROPERTY( EditAnywhere , BlueprintReadWrite )
+	UStaticMeshComponent* EndComp;
+
+	UPROPERTY( EditAnywhere , BlueprintReadWrite )
+	UMaterialInterface* MaterialComp;
+};
 
 UCLASS()
 class HIDE_SEEK_API ACable : public AActor
@@ -15,58 +37,47 @@ class HIDE_SEEK_API ACable : public AActor
 	GENERATED_BODY()
 	
 public:	
-	// Sets default values for this actor's properties
 	ACable();
 
 protected:
-	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-public:	
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
+public:
+	// virtual void Tick( float DeltaTime ) override;
+	void SetupCableComponent( FCableSetup& CableSetup , const FString& BaseName );
 
-	// 케이블 컴포넌트
-	UPROPERTY( VisibleAnywhere , BlueprintReadOnly , Category = "Components" )
-	class UCableComponent* CableComponent;
+	UPROPERTY( EditAnywhere , BlueprintReadWrite , Category = "Cable")
+	TArray<FCableSetup> CableSetups;
 
-	// Static Mesh for Start
-	UPROPERTY( VisibleAnywhere , BlueprintReadOnly , Category = "Cable" )
-	class UStaticMeshComponent* StartStaticMesh;
+	UPROPERTY( EditAnywhere , BlueprintReadOnly , Category = "Cable" )
+	USphereComponent* EndSphereCollision;
 
-	// Static Mesh for Start
-	UPROPERTY( VisibleAnywhere , BlueprintReadOnly , Category = "Cable" )
-	class UStaticMeshComponent* MoveMesh;
-
-	// Sphere Collision for End
-	UPROPERTY( VisibleAnywhere , BlueprintReadOnly , Category = "Cable" )
-	class USphereComponent* EndSphereCollision;
-
-	// Static Mesh for New End
-	UPROPERTY( VisibleAnywhere , BlueprintReadOnly , Category = "Cable" )
-	class UStaticMeshComponent* NewEndStaticMesh;
-
-	// Sphere Collision for New End
-	UPROPERTY( VisibleAnywhere , BlueprintReadOnly , Category = "Cable" )
+	UPROPERTY( EditAnywhere , BlueprintReadOnly , Category = "Cable" )
 	USphereComponent* NewEndSphereCollision;
 
-	// 케이블 끝점 드래그 여부
-	UPROPERTY( VisibleAnywhere , BlueprintReadOnly , Category = "Gameplay" )
-	bool bIsDraggingCableEnd = false;
+	UPROPERTY( EditAnywhere,BlueprintReadWrite,Category = "Cable", Meta = (ExposeOnSpawn = true) )
+	FCableSetup RedCable;
 
-	UFUNCTION(BlueprintCallable)
+	UPROPERTY( EditAnywhere , BlueprintReadWrite , Category = "Cable" )
+	UStaticMeshComponent* RedStartComp;
+
+	UPROPERTY( EditAnywhere , BlueprintReadWrite , Category = "Cable", Meta = (ExposeOnSpawn = true) )
+	FCableSetup BlueCable;
+
+	UPROPERTY( EditAnywhere , BlueprintReadWrite , Category = "Cable" )
+	UStaticMeshComponent* BlueStartComp;
+
+	UPROPERTY( EditAnywhere , BlueprintReadWrite , Category = "Cable", Meta = (ExposeOnSpawn = true) )
+	FCableSetup GreenCable;
+
+	UPROPERTY( EditAnywhere , BlueprintReadWrite , Category = "Cable" )
+	UStaticMeshComponent* GreenStartComp;
+
+
+	UFUNCTION( BlueprintCallable )
 	void HandleCableGrabbed( UPrimitiveComponent* RightController );
 
 	UFUNCTION( BlueprintCallable )
 	void HandleCableReleased();
-
-	UPROPERTY( EditAnywhere , BlueprintReadWrite )
-	AHidePlayer* OwningPlayer;
-
-	UPROPERTY( EditAnywhere , Category = "Materials" )
-	UMaterialInterface* NewEndMaterial;
-
-	UPROPERTY( EditAnywhere , Category = "Materials" )
-	UMaterialInterface* StartMaterial;
 
 };
