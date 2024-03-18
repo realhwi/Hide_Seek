@@ -51,8 +51,6 @@ public:
 	class UInputAction* IA_Run;
 	UPROPERTY( EditAnywhere , BlueprintReadOnly , Category = Input , meta = (AllowPrivateAccess = "true") )
 	class UInputAction* IA_Crouch;
-	/*UPROPERTY( EditAnywhere , BlueprintReadOnly , Category = Input , meta = (AllowPrivateAccess = "true") )
-	class UInputAction* IA_CheckGrab;*/
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Settings | Player")
 	class UCameraComponent* CameraComponent;

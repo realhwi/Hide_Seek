@@ -112,50 +112,59 @@ void ACable::HandleCableReleased( UPrimitiveComponent* NewEndComponent )
 	if (CurrentlyGrabbedComp == MoveMesh && NewEndComponent == NewEndStaticMesh)
 	{
 		bIsCableComponentConnected = true;
-		ConnectionCompletedCount++;
-		UE_LOG( LogTemp , Warning , TEXT( "Connection completed for CableComponent to NewEndStaticMesh." ) );
+		//ConnectionCompletedCount++;
 
 	}
 	else if (CurrentlyGrabbedComp == MoveMesh1 && NewEndComponent == NewEndMesh1)
 	{
 		bIsCableComp1Connected = true;
-		ConnectionCompletedCount++;
-		UE_LOG( LogTemp , Warning , TEXT( "Connection completed for CableComp1 to NewEndMesh1." ) );
+		//ConnectionCompletedCount++;
 	}
 	else if (CurrentlyGrabbedComp == MoveMesh2 && NewEndComponent == NewEndMesh2)
 	{
 		bIsCableComp2Connected = true;
-		ConnectionCompletedCount++;
-		UE_LOG( LogTemp , Warning , TEXT( "Connection completed for CableComp2 to NewEndMesh2." ) );
+		//ConnectionCompletedCount++;
 	}
 
-	// 모든 케이블 컴포넌트의 연결이 완료되었는지 확인
-	if (ConnectionCompletedCount == TotalCableComponents)
-	{
-		UE_LOG( LogTemp , Warning , TEXT( "All cable components successfully connected." ) );
-		// 모든 연결이 완료되었으므로, 머터리얼 변경 또는 초기 위치로 복귀하는 로직 호출
-		CheckAndApplyMaterial();
-	}
-}
-
-void ACable::ResetConnectionStates()
-{
-	// 연결 상태 변수 및 연결 완료 횟수 초기화
-	bIsCableComponentConnected = false;
-	bIsCableComp1Connected = false;
-	bIsCableComp2Connected = false;
-	ConnectionCompletedCount = 0;
+	ConnectionCompletedCount++;
+	UE_LOG( LogTemp , Warning , TEXT( "All cable components successfully connected." ) );
+	// 머터리얼 변경 또는 초기 위치로 복귀하는 로직 호출
+	CheckAndApplyMaterial();
+	
 }
 
 void ACable::CheckAndApplyMaterial()
 {
-	if (bIsCableComponentConnected && bIsCableComp1Connected && bIsCableComp2Connected)
+	UE_LOG( LogTemp , Warning , TEXT( "Checking cable connections. ConnectionCompletedCount: %d, Expected: %d" ) , ConnectionCompletedCount , TotalCableComponents );
+
+	// 모든 케이블 컴포넌트의 연결이 완료되었는지 확인
+	if (ConnectionCompletedCount == TotalCableComponents)
 	{
-		ApplyMaterials();
+		UE_LOG( LogTemp , Warning , TEXT( "All components reported as connected." ) );
+
+		if (bIsCableComponentConnected && bIsCableComp1Connected && bIsCableComp2Connected)
+		{
+			UE_LOG( LogTemp , Warning , TEXT( "All connections valid, applying materials." ) );
+
+			// 모든 연결이 성공적으로 이루어졌다면 머터리얼 적용
+			ApplyMaterials();
+		}
+		else
+		{
+			UE_LOG( LogTemp , Warning , TEXT( "One or more connections invalid, resetting to initial positions." ) );
+
+			// 하나라도 연결이 실패했다면 초기 위치로 복귀
+			ResetToInitialPositions();
+		}
+
+		// 연결 상태 변수 및 연결 완료 횟수 초기화
+		UE_LOG( LogTemp , Warning , TEXT( "Not all connections valid, resetting to initial positions." ) );
+
+		ResetConnectionStates();
 	}
 	else
 	{
-		ResetToInitialPositions();
+		UE_LOG( LogTemp , Warning , TEXT( "Connection count does not match expected total. Skipping material application and reset." ) );
 	}
 }
 
@@ -177,6 +186,12 @@ void ACable::ApplyMaterials()
 
 void ACable::ResetToInitialPositions()
 {
+	// Log current positions before resetting
+	UE_LOG( LogTemp , Warning , TEXT( "Resetting positions. Current positions: MoveMesh: %s, MoveMesh1: %s, MoveMesh2: %s" ) ,
+		*MoveMesh->GetComponentLocation().ToString() ,
+		*MoveMesh1->GetComponentLocation().ToString() ,
+		*MoveMesh2->GetComponentLocation().ToString() );
+
 	// NewEndStaticMesh, NewEndMesh1, NewEndMesh2에 붙어 있던 End 지점을 떼는 작업
 	if (bIsCableComponentConnected)
 	{
@@ -203,11 +218,24 @@ void ACable::ResetToInitialPositions()
 	MoveMesh1->SetWorldLocation( InitialMoveMesh1Location );
 	MoveMesh2->SetWorldLocation( InitialMoveMesh2Location );
 
+	// Log new positions after resetting
+	UE_LOG( LogTemp , Warning , TEXT( "New positions after resetting: MoveMesh: %s, MoveMesh1: %s, MoveMesh2: %s" ) ,
+		*MoveMesh->GetComponentLocation().ToString() ,
+		*MoveMesh1->GetComponentLocation().ToString() ,
+		*MoveMesh2->GetComponentLocation().ToString() );
+
 	// 연결 상태 변수를 초기화하여 다시 연결할 수 있도록 함
+	/*bIsCableComponentConnected = false;
+	bIsCableComp1Connected = false;
+	bIsCableComp2Connected = false;*/
+}
+
+void ACable::ResetConnectionStates()
+{
+	UE_LOG( LogTemp , Warning , TEXT( "ResetConnectionStates" ) );
+	// 연결 상태 변수 및 연결 완료 횟수 초기화
 	bIsCableComponentConnected = false;
 	bIsCableComp1Connected = false;
 	bIsCableComp2Connected = false;
+	ConnectionCompletedCount = 0;
 }
-
-
-
