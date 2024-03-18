@@ -206,10 +206,12 @@ public:
 	UPROPERTY( EditDefaultsOnly , BlueprintReadWrite )
 	TSubclassOf<class UGameOver> GameOverUIFactory;
 
-	UPROPERTY( EditDefaultsOnly )
 	// 생명 최대 값 
-	int32 maxLifeCount = 3;
+	UPROPERTY( EditDefaultsOnly )
+	int32 maxLifeCount = 4;
+
 	// 1부터 시작해서 max까지
+	UPROPERTY( BlueprintReadWrite , Category = "Player" )
 	int32 LifeCount = maxLifeCount;
 
 	// 충돌 확인 
@@ -217,7 +219,7 @@ public:
 	class UParticleSystem* VFX;
 
 	// Die 
-	UFUNCTION()
+	UFUNCTION( BlueprintCallable , Category = "Player" )
 	void OnLifeDepleted();
 
 	UFUNCTION()

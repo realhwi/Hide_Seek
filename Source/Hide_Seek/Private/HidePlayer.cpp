@@ -117,7 +117,7 @@ void AHidePlayer::BeginPlay()
 		{
 			playerUI->AddToViewport();
 			// 초기 생명값 설정을 위해 AddLife() 호출
-			for (int32 i = 0; i < maxLifeCount; i++)
+			for (int32 i = 0; i < maxLifeCount-1; i++)
 			{
 				playerUI->AddLife();
 			}
@@ -561,7 +561,10 @@ void AHidePlayer::OnOverlapBegin( UPrimitiveComponent* OverlappedComp , AActor* 
 		UE_LOG( LogTemp , Warning , TEXT( "Overlapped!!" ) );
 		// count가 0 이하라면 함수 종료 
 		if (LifeCount <= 0)
+		{
+			OnLifeDepleted();
 			return;
+		}
 		// 생명 카운트 다운 
 		LifeCount--;
 		if (playerUI)
