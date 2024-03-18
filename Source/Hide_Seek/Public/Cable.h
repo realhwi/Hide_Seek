@@ -33,10 +33,6 @@ public:
 	UPROPERTY( VisibleAnywhere , BlueprintReadOnly , Category = "Cable" )
 	class UStaticMeshComponent* StartStaticMesh;
 
-	// Static Mesh for Start
-	UPROPERTY( VisibleAnywhere , BlueprintReadOnly , Category = "Cable" )
-	class UStaticMeshComponent* MoveMesh;
-
 	// Sphere Collision for End
 	UPROPERTY( VisibleAnywhere , BlueprintReadOnly , Category = "Cable" )
 	class USphereComponent* EndSphereCollision;
@@ -53,8 +49,11 @@ public:
 	UPROPERTY( VisibleAnywhere , BlueprintReadOnly , Category = "Gameplay" )
 	bool bIsDraggingCableEnd = false;
 
+	// 플레이어의 RightController 위치를 저장하는 변수
+	FVector PlayerRightControllerLocation;
+
 	UFUNCTION(BlueprintCallable)
-	void HandleCableGrabbed( UPrimitiveComponent* RightController );
+	void HandleCableGrabbed( UPrimitiveComponent* HandMesh );
 
 	UFUNCTION( BlueprintCallable )
 	void HandleCableReleased();
