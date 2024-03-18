@@ -7,6 +7,7 @@
 #include "InputActionValue.h"
 #include "InputMappingContext.h"
 #include "Interaction.h"
+#include "Components/WidgetComponent.h"
 #include "HidePlayer.generated.h"
 
 class ACable; // 전방 선언을 추가합니다.
@@ -186,6 +187,9 @@ public:
 	UPROPERTY( EditDefaultsOnly , BlueprintReadWrite )
 	TSubclassOf<class UPlayerUI> playerUIFactory;
 
+	UPROPERTY( VisibleAnywhere , BlueprintReadOnly , Category = "Components" )
+	UWidgetComponent* playerWidgetComponent;
+
 	UPROPERTY( EditDefaultsOnly )
 	class UGameOver* GameOverUI;
 
@@ -206,8 +210,11 @@ public:
 	UFUNCTION()
 	void OnLifeDepleted();
 
+	UFUNCTION()
+	bool LifeRemove();
+
 	// 생명 하나 감소, 이게 true가되면 텔레포트 하기
-	UPROPERTY( EditDefaultsOnly )
+	UPROPERTY( EditDefaultsOnly,BlueprintReadWrite )
 	bool bLifeRemove = false;
 
 	// 인터렉션 실행 감지
