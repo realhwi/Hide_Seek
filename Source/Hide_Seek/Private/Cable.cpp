@@ -102,42 +102,39 @@ void ACable::HandleCableReleased( UPrimitiveComponent* NewEndComponent )
 		UE_LOG( LogTemp , Warning , TEXT( "Either grabbed component or NewEndComponent is null." ) );
 		return;
 	}
+
 	CurrentlyGrabbedComp->DetachFromComponent( FDetachmentTransformRules::KeepWorldTransform );
 	CurrentlyGrabbedComp->AttachToComponent( NewEndComponent , FAttachmentTransformRules::SnapToTargetNotIncludingScale );
+	UE_LOG( LogTemp , Warning , TEXT( "Attempted to attach %s to %s." ) , *GetNameSafe( CurrentlyGrabbedComp ) , *GetNameSafe( NewEndComponent ) );
 
 
 	// 케이블 컴포넌트의 연결 상태 확인 및 업데이트
-	bool connectionUpdated = false;
-	if (CurrentlyGrabbedCableComponent == CableComponent && NewEndComponent == NewEndStaticMesh)
+	if (CurrentlyGrabbedComp == MoveMesh && NewEndComponent == NewEndStaticMesh)
 	{
 		bIsCableComponentConnected = true;
-		connectionUpdated = true;
+		ConnectionCompletedCount++;
+		UE_LOG( LogTemp , Warning , TEXT( "Connection completed for CableComponent to NewEndStaticMesh." ) );
+
 	}
-	else if (CurrentlyGrabbedCableComponent == CableComp1 && NewEndComponent == NewEndMesh1)
+	else if (CurrentlyGrabbedComp == MoveMesh1 && NewEndComponent == NewEndMesh1)
 	{
 		bIsCableComp1Connected = true;
-		connectionUpdated = true;
+		ConnectionCompletedCount++;
+		UE_LOG( LogTemp , Warning , TEXT( "Connection completed for CableComp1 to NewEndMesh1." ) );
 	}
-	else if (CurrentlyGrabbedCableComponent == CableComp2 && NewEndComponent == NewEndMesh2)
+	else if (CurrentlyGrabbedComp == MoveMesh2 && NewEndComponent == NewEndMesh2)
 	{
 		bIsCableComp2Connected = true;
-		connectionUpdated = true;
-	}
-
-	// 연결 상태가 업데이트되었다면, 연결 완료 횟수 업데이트
-	if (connectionUpdated)
-	{
 		ConnectionCompletedCount++;
+		UE_LOG( LogTemp , Warning , TEXT( "Connection completed for CableComp2 to NewEndMesh2." ) );
 	}
 
 	// 모든 케이블 컴포넌트의 연결이 완료되었는지 확인
 	if (ConnectionCompletedCount == TotalCableComponents)
 	{
+		UE_LOG( LogTemp , Warning , TEXT( "All cable components successfully connected." ) );
 		// 모든 연결이 완료되었으므로, 머터리얼 변경 또는 초기 위치로 복귀하는 로직 호출
 		CheckAndApplyMaterial();
-
-		// 연결 상태 변수 및 연결 완료 횟수 초기화
-		ResetConnectionStates();
 	}
 }
 
