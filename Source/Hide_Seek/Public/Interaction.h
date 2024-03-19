@@ -34,4 +34,9 @@ public:
 	UFUNCTION( BlueprintImplementableEvent , Category = "Interaction" )
 	void OnGrabInteract( AHidePlayer* Player );
 
+	UFUNCTION( BlueprintImplementableEvent , Category = "Interaction" )
+	void OnCableGrabbed( AHidePlayer* Player );
+
+	UFUNCTION( BlueprintImplementableEvent , Category = "Interaction" )
+	void OnUnGrabInteract( AHidePlayer* Player );
 };
