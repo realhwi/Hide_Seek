@@ -69,7 +69,7 @@ private:
 	//void EInteractionStart(const FInputActionValue& value);
 
 	//UFUNCTION()
-	//void EInteractionTriggered(const FInputActionValue& value);
+	//void EInteractionOnGoing(const FInputActionValue& value);
 
 	//UFUNCTION()
 	//void EInteractionComplete(const FInputActionValue& value);
@@ -133,9 +133,4 @@ public:
 
 	UPROPERTY( EditAnywhere , BlueprintReadWrite )
 	float addEscapeLockTime;
-
-	UPROPERTY( EditAnywhere , BlueprintReadWrite, Replicated )
-	bool isHandUP;
-
-	virtual void GetLifetimeReplicatedProps( TArray<FLifetimeProperty>& OutLifetimeProps ) const override;
 };
