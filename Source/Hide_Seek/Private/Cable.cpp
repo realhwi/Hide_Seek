@@ -223,11 +223,6 @@ void ACable::ResetToInitialPositions()
 		*MoveMesh->GetComponentLocation().ToString() ,
 		*MoveMesh1->GetComponentLocation().ToString() ,
 		*MoveMesh2->GetComponentLocation().ToString() );
-
-	// 연결 상태 변수를 초기화하여 다시 연결할 수 있도록 함
-	/*bIsCableComponentConnected = false;
-	bIsCableComp1Connected = false;
-	bIsCableComp2Connected = false;*/
 }
 
 void ACable::ResetConnectionStates()

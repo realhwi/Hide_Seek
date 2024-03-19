@@ -212,7 +212,7 @@ public:
 
 	// 1부터 시작해서 max까지
 	UPROPERTY( BlueprintReadWrite , Category = "Player" )
-	int32 LifeCount = maxLifeCount;
+	int32 LifeCount = maxLifeCount-1;
 
 	// 충돌 확인 
 	UPROPERTY( EditAnywhere )
