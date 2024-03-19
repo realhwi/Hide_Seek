@@ -4,8 +4,10 @@
 #include "Cable.h"
 #include "CableComponent.h"
 #include "HidePlayer.h"
+#include "Kismet/GameplayStatics.h"
 
-// Sets default values
+
+// TMap<int32 , bool> ACable::MaterialsAppliedStatus;
 ACable::ACable()
 {
 	PrimaryActorTick.bCanEverTick = true;
@@ -49,6 +51,8 @@ ACable::ACable()
 	NewEndMesh2 = CreateDefaultSubobject<UStaticMeshComponent>( TEXT( "NewEndMesh2" ) );
 	NewEndMesh2->SetupAttachment( RootComponent );
 
+	CurrentStage = ConnectionStage::Init;
+	// ExpectedNumMaterialsApplied = 3;
 }
 
 // Called when the game starts or when spawned
@@ -170,6 +174,11 @@ void ACable::CheckAndApplyMaterial()
 
 void ACable::ApplyMaterials()
 {
+	/*for (const auto& Status : MaterialsAppliedStatus)
+	{
+		UE_LOG( LogTemp , Warning , TEXT( "Index: %d, Applied: %s" ) , Status.Key , Status.Value ? TEXT( "True" ) : TEXT( "False" ) );
+	}*/
+
 	// 세 컴포넌트 세트가 각각 올바르게 연결된 경우, 머터리얼 변경
 	StartStaticMesh->SetMaterial( 0 , Material1 );
 	CableComponent->SetMaterial( 0 , Material1 );
@@ -182,6 +191,39 @@ void ACable::ApplyMaterials()
 	StartMesh2->SetMaterial( 0 , Material3 );
 	CableComp2->SetMaterial( 0 , Material3 );
 	NewEndMesh2->SetMaterial( 0 , Material3 );
+
+	//// 현재 인스턴스의 Index로 맵을 업데이트
+	//if (!MaterialsAppliedStatus.Contains( Index )) {
+	//	MaterialsAppliedStatus.Add( Index , true );
+	//	UE_LOG( LogTemp , Warning , TEXT( "Index: %d marked as applied." ) , Index );
+	//}
+	//else {
+	//	// 이미 존재하는 경우, 추가 로직 없음
+	//	UE_LOG( LogTemp , Warning , TEXT( "Index: %d already applied, skipping." ) , Index );
+	//}
+
+	//// 모든 인스턴스가 ApplyMaterials를 호출했는지 확인
+	//if (MaterialsAppliedStatus.Num() >= ExpectedNumMaterialsApplied) {
+	//	bool allApplied = true;
+	//	for (const auto& Elem : MaterialsAppliedStatus) {
+	//		if (!Elem.Value) {
+	//			allApplied = false;
+	//			break;
+	//		}
+	//	}
+
+	//	if (allApplied) {
+	//		// VFX 실행
+	//		AHidePlayer* PlayerActor = Cast<AHidePlayer>( UGameplayStatics::GetPlayerCharacter( GetWorld() , 0 ) );
+	//		if (PlayerActor && VFX) {
+	//			UE_LOG( LogTemp , Warning , TEXT( "VFX" ) );
+	//			UGameplayStatics::SpawnEmitterAtLocation( GetWorld() , VFX , PlayerActor->GetActorLocation() );
+
+	//			// 맵을 초기화하여 다음 번 사용을 위해 준비합니다.
+	//			MaterialsAppliedStatus.Empty();
+	//		}
+	//	}
+	//}
 }
 
 void ACable::ResetToInitialPositions()
@@ -225,9 +267,35 @@ void ACable::ResetToInitialPositions()
 		*MoveMesh2->GetComponentLocation().ToString() );
 }
 
+void ACable::UpdateStage()
+{
+	if (CurrentStage == ConnectionStage::Init)
+	{
+		CurrentStage = ConnectionStage::Mid;
+	}
+	else if (CurrentStage == ConnectionStage::Mid)
+	{
+		CurrentStage = ConnectionStage::Complete;
+		ExecuteVFX();
+	}
+}
+
+void ACable::ExecuteVFX()
+{
+	if (CurrentStage == ConnectionStage::Complete)
+	{
+		AHidePlayer* PlayerActor = Cast<AHidePlayer>( UGameplayStatics::GetPlayerCharacter( GetWorld() , 0 ) );
+		if (PlayerActor && VFX) 
+		{
+			UE_LOG( LogTemp , Warning , TEXT( "VFX" ) );
+			UGameplayStatics::SpawnEmitterAtLocation( GetWorld() , VFX , PlayerActor->GetActorLocation() );
+		}
+	}
+}
+
 void ACable::ResetConnectionStates()
 {
-	UE_LOG( LogTemp , Warning , TEXT( "ResetConnectionStates" ) );
+	UE_LOG( LogTemp , Warning , TEXT( "Resetting connection states." ) );
 	// 연결 상태 변수 및 연결 완료 횟수 초기화
 	bIsCableComponentConnected = false;
 	bIsCableComp1Connected = false;

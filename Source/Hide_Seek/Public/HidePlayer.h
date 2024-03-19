@@ -224,9 +224,6 @@ public:
 	UFUNCTION()
 	void HiddenPlayer();
 
-	UFUNCTION()
-	void RestoreOriginalMaterials();
-
 	// 충돌 확인 
 	UPROPERTY( EditAnywhere )
 	class UParticleSystem* VFX;

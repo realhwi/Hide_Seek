@@ -74,10 +74,6 @@ AHidePlayer::AHidePlayer()
 	LeftController->SetCollisionResponseToAllChannels( ECR_Ignore );
 	LeftController->SetCollisionResponseToChannel( ECC_Pawn , ECR_Overlap );
 
-	// 캡슐 컴포넌트 콜리전 설정
-	GetCapsuleComponent()->SetCollisionEnabled( ECollisionEnabled::QueryOnly );
-	GetCapsuleComponent()->SetCollisionResponseToChannel( ECollisionChannel::ECC_Pawn , ECollisionResponse::ECR_Overlap );
-
 	//static ConstructorHelpers::FObjectFinder<UStaticMesh> LeftMeshFinder( TEXT( "/Script/Engine.StaticMesh'/Game/JH/Models/left_OculusTouch_v2Controller.left_OculusTouch_v2Controller'" ) );
 	//if (LeftMeshFinder.Succeeded())
 	//{
@@ -107,6 +103,9 @@ void AHidePlayer::BeginPlay()
 {
 	Super::BeginPlay();
 
+	// 캡슐 컴포넌트 콜리전 설정
+	GetCapsuleComponent()->SetCollisionEnabled( ECollisionEnabled::QueryOnly );
+	GetCapsuleComponent()->SetCollisionResponseToChannel( ECollisionChannel::ECC_Pawn , ECollisionResponse::ECR_Overlap );
 
 	APlayerController* Playercontroller = Cast<APlayerController>( GetWorld()->GetFirstPlayerController() );
 
@@ -202,7 +201,7 @@ void AHidePlayer::OnConstruction( const FTransform& Transform )
 
 void AHidePlayer::Move( const FInputActionValue& Value )
 {
-	UE_LOG( LogTemp , Warning , TEXT( "Try" ) );
+	// UE_LOG( LogTemp , Warning , TEXT( "Try" ) );
 
 	FVector2D MovementVector = Value.Get<FVector2D>();
 
@@ -239,8 +238,7 @@ void AHidePlayer::Look( const FInputActionValue& Value )
 		AddControllerPitchInput( -LookAxisVector.Y );
 	}
 
-	UE_LOG( LogTemp , Warning , TEXT( "Thumbstick Look: %s" ) , *LookAxisVector.ToString() );
-
+	//UE_LOG( LogTemp , Warning , TEXT( "Thumbstick Look: %s" ) , *LookAxisVector.ToString() );
 }
 
 void AHidePlayer::OnIACrouch( const FInputActionValue& Value )

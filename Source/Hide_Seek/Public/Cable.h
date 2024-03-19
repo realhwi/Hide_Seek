@@ -7,6 +7,12 @@
 #include "Delegates/Delegate.h"
 #include "Cable.generated.h"
 
+enum class ConnectionStage : uint8
+{
+	Init ,
+	Mid ,
+	Complete
+};
 class AHidePlayer;
 
 UCLASS()
@@ -59,27 +65,6 @@ public:
 	UPROPERTY( VisibleAnywhere , BlueprintReadOnly , Category = "Cable" )
 	UPrimitiveComponent* CurrentlyGrabbedComp = nullptr;
 
-	UPROPERTY( VisibleAnywhere , BlueprintReadOnly , Category = "Cable" )
-	UCableComponent* CurrentlyGrabbedCableComponent = nullptr;
-
-	UFUNCTION(BlueprintCallable)
-	void HandleCableGrabbed( UPrimitiveComponent* RightController , UPrimitiveComponent* ComponentToAttach );
-
-	UFUNCTION( BlueprintCallable )
-	void HandleCableReleased( UPrimitiveComponent* NewEndComponent );
-
-	void CheckAndApplyMaterial();
-
-	void ResetConnectionStates();
-
-	void ApplyMaterials();
-
-	void ResetToInitialPositions();
-
-	bool bIsCableComponentConnected = false;
-	bool bIsCableComp1Connected = false;
-	bool bIsCableComp2Connected = false;
-
 	UPROPERTY( EditAnywhere , Category = "Materials" )
 	UMaterialInterface* Material1;
 
@@ -88,6 +73,40 @@ public:
 
 	UPROPERTY( EditAnywhere , Category = "Materials" )
 	UMaterialInterface* Material3;
+
+	UPROPERTY( EditAnywhere )
+	class UParticleSystem* VFX;
+
+	UFUNCTION(BlueprintCallable)
+	void HandleCableGrabbed( UPrimitiveComponent* RightController , UPrimitiveComponent* ComponentToAttach );
+
+	UFUNCTION( BlueprintCallable )
+	void HandleCableReleased( UPrimitiveComponent* NewEndComponent );
+
+	void CheckAndApplyMaterial();
+	void ResetConnectionStates();
+	void ApplyMaterials();
+	void ResetToInitialPositions();
+
+	ConnectionStage GetCurrentStage() const { return CurrentStage; }
+
+	void UpdateStage();
+	void ExecuteVFX();
+
+	
+	//static TMap<int32 , bool> MaterialsAppliedStatus;
+	//int32 ExpectedNumMaterialsApplied;
+
+	//UPROPERTY( EditAnywhere , BlueprintReadWrite , Category = "Cable" )
+	//int32 Index; // 각 인스턴스에 고유 식별자로 사용될 변수
+
+private:
+	// 현재 연결 상태를 추적하는 변수
+	ConnectionStage CurrentStage;
+
+	bool bIsCableComponentConnected = false;
+	bool bIsCableComp1Connected = false;
+	bool bIsCableComp2Connected = false;
 
 	FVector InitialMoveMeshLocation;
 	FVector InitialMoveMesh1Location;
