@@ -20,6 +20,7 @@
 #include "Components/WidgetComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "Net/UnrealNetwork.h"
 
 class UWidgetComponent;
 // Sets default values
@@ -116,8 +117,7 @@ void AHidePlayer::BeginPlay()
 		if (playerUI)
 		{
 			playerUI->AddToViewport();
-			// 초기 생명값 설정을 위해 AddLife() 호출
-			for (int32 i = 0; i < maxLifeCount-1; i++)
+			for (int32 i = 0; i < LifeCount; i++)
 			{
 				playerUI->AddLife();
 			}
@@ -127,7 +127,6 @@ void AHidePlayer::BeginPlay()
 	{
 		playerUI->OnLifeDepleted.AddDynamic( this , &AHidePlayer::OnLifeDepleted );
 	}
-
 
 	// 오버랩 이벤트 핸들러를 바인딩
 	GetCapsuleComponent()->OnComponentBeginOverlap.AddDynamic( this , &AHidePlayer::OnOverlapBegin );
@@ -146,6 +145,11 @@ void AHidePlayer::BeginPlay()
 	}
 	// 바닥에서 올라와서 걷는 거 
 	UHeadMountedDisplayFunctionLibrary::SetTrackingOrigin( EHMDTrackingOrigin::Floor );
+
+	// 플레이어 메시에 접근해서 머터리얼 저장
+	UMeshComponent* PlayerMesh = GetMesh();
+	OriginalMaterial1 = PlayerMesh->GetMaterial( 0 );
+	OriginalMaterial2 = PlayerMesh->GetMaterial( 1 );
 }
 
 // Called every frame
@@ -592,6 +596,18 @@ void AHidePlayer::OnOverlapEnd( UPrimitiveComponent* OverlappedComp , AActor* Ot
 	bLifeRemove = false;
 }
 
+void AHidePlayer::IncreaseLife()
+{
+	if (LifeCount < maxLifeCount && LifeCount >= 0)
+	{
+		LifeCount++;
+		if (playerUI)
+		{
+			playerUI->AddLife();
+		}
+	}
+}
+
 void AHidePlayer::OnLifeDepleted()
 {
 	if (GameOverUIFactory != nullptr)
@@ -620,6 +636,116 @@ void AHidePlayer::UpdateTriggerStatus( bool bPressed )
 	}
 }
 
+void AHidePlayer::HiddenPlayer()
+{
+	// 로컬 플레이어에게만 적용됨 
+	BecomeInvisibleToLocalPlayer();
+
+	// 이후 로직에서 서버에게 이 상태 변경을 알리기
+	Server_SetPlayerHidden( true );
+
+}
+
+void AHidePlayer::Server_SetPlayerHidden_Implementation(bool bNewHidden)
+{
+	if (HasAuthority()) // 서버에서 실행 중인지 확인
+	{
+		bIsHidden = bNewHidden; // 상태를 변경
+
+		if (bIsHidden)
+		{
+			BecomeInvisibleToOtherPlayers(); // 다른 클라이언트에게 플레이어를 '투명'으로 만들기
+
+			// 5초 후에 상태를 복원하기 위한 타이머 설정
+			FTimerHandle TimerHandle;
+			GetWorld()->GetTimerManager().SetTimer( TimerHandle , this , &AHidePlayer::RestoreVisibility , 5.0f , false );
+		}
+	}
+}
+
+bool AHidePlayer::Server_SetPlayerHidden_Validate(bool bNewHidden)
+{
+	return true;
+}
+
+void AHidePlayer::SetPlayerHidden()
+{
+	if (IsLocallyControlled())
+	{
+		BecomeInvisibleToLocalPlayer(); // 로컬 변경 
+		Server_SetPlayerHidden( true ); // 서버에 상태 변경을 요청
+	}
+}
+
+void AHidePlayer::RestoreVisibility()
+{
+	if (IsLocallyControlled())
+	{
+		BecomeVisibleToLocalPlayer(); // 로컬 변경
+		Server_SetPlayerHidden( false ); // 서버에 상태 변경을 요청
+	}
+}
+
+void AHidePlayer::OnRep_IsHidden()
+{
+	if (bIsHidden)
+	{
+		BecomeInvisibleToOtherPlayers();
+	}
+	else
+	{
+		BecomeVisibleToOtherPlayers();
+	}
+}
+void AHidePlayer::BecomeInvisibleToOtherPlayers()
+{
+	// 액터 전체를 숨김 
+	SetActorHiddenInGame( true );
+
+	// 콜리전 비활성화 
+	SetActorEnableCollision( false );
+}
+
+void AHidePlayer::BecomeVisibleToOtherPlayers()
+{
+	// 액터 전체를 다시 보이게하기
+	SetActorHiddenInGame( false );
+
+	// 콜리전 다시 활성화 
+	SetActorEnableCollision( true );
+}
+
+void AHidePlayer::BecomeInvisibleToLocalPlayer()
+{
+	// 플레이어 메시에 접근
+	UMeshComponent* PlayerMesh = GetMesh();
+
+	// 새로운 투명화 머티리얼 찾기
+	UMaterialInterface* InvisibleMaterial1 = LoadObject<UMaterialInterface>( nullptr , TEXT( "MaterialInstanceConstant'/Game/JH/Material/MI_MannequinGlow05.MI_MannequinGlow05'" ) );
+	UMaterialInterface* InvisibleMaterial2 = LoadObject<UMaterialInterface>( nullptr , TEXT( "MaterialInstanceConstant'/Game/JH/Material/MI_MannequinGlow06.MI_MannequinGlow06'" ) );
+
+	// 메시의 모든 섹션에 대해 머티리얼 변경
+	PlayerMesh->SetMaterial( 0 , InvisibleMaterial1 );
+	PlayerMesh->SetMaterial( 1 , InvisibleMaterial2 );
+
+	BecomeInvisibleToOtherPlayers();
+}
+
+void AHidePlayer::BecomeVisibleToLocalPlayer()
+{
+	// 메시의 모든 섹션에 대해 원래의 머티리얼로 복원
+	UMeshComponent* PlayerMesh = GetMesh();
+	PlayerMesh->SetMaterial( 0 , OriginalMaterial1 );
+	PlayerMesh->SetMaterial( 1 , OriginalMaterial2 );
+
+	BecomeVisibleToOtherPlayers();
+}
+
+void AHidePlayer::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME( AHidePlayer , bIsHidden );
+}
 
 void AHidePlayer::OnActionTrigger()
 {
