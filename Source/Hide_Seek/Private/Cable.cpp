@@ -80,11 +80,14 @@ void ACable::HandleCableGrabbed(UPrimitiveComponent* RightController )
 		return;
 	}
 
-	MoveMesh->AttachToComponent( RightController , FAttachmentTransformRules::SnapToTargetIncludingScale , FName( TEXT( "Hand_rPoint" ) ) );
-	UE_LOG( LogTemp , Warning , TEXT( "Cable MoveMesh attached to RightController." ) );
+	MoveMesh->AttachToComponent( RightController , FAttachmentTransformRules::SnapToTargetNotIncludingScale );
 
-	//MoveMesh->SetRelativeLocation( FVector( 0 , 0 , 0 ) );
-	//MoveMesh->SetRelativeRotation( FRotator( 0 , 0 , 0 ) );
+	//FTransform t = this->OwningPlayer->GetMesh()->GetSocketTransform( FName( TEXT( "Hand_rPoint" )));
+
+
+	//MoveMesh->SetWorldLocationAndRotation(t.GetLocation(), t.Rotator());
+
+	UE_LOG( LogTemp , Warning , TEXT( "Cable MoveMesh attached to RightController." ) );
 }
 
 void ACable::HandleCableReleased()
