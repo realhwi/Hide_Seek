@@ -32,7 +32,7 @@ UClass* ATESTSPawnGMB::GetDefaultPawnClassForController_Implementation(AControll
 	{
 		if (firstPawn != nullptr && secondPawn != nullptr)
 		{
-			return currentPawnToAssign = ((rand() % 2) == 0) ? firstPawn : secondPawn;
+			return currentPawnToAssign = ((rand() % 1) == 0) ? firstPawn : secondPawn;
 		}
 	}
 

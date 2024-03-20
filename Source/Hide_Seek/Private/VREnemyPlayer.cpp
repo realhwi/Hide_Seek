@@ -60,6 +60,13 @@ AVREnemyPlayer::AVREnemyPlayer()
 	//	// rightHandMesh->SetRelativeLocationAndRotation(FVector(-3, 3.5, 4.5), FRotator(25, 0, 90));
 	//}
 
+	handSphereColl = CreateDefaultSubobject<USphereComponent>( TEXT( "HandSphereColl" ) );
+	handSphereColl->SetupAttachment( GetMesh() );
+	handSphereColl->AttachToComponent( GetMesh() , FAttachmentTransformRules::SnapToTargetIncludingScale , TEXT( "EnemyRHPoint" ) );
+	handSphereColl->SetRelativeLocation( FVector( -10 , 0 , 0 ) );
+	handSphereColl->SetSphereRadius( 10.f );
+	handSphereColl->ComponentTags.Add( FName( "EnemyHand" ) );
+
 	bReplicates = true;
 }
 
@@ -72,7 +79,7 @@ void AVREnemyPlayer::BeginPlay()
 
 	//UE_LOG( LogTemp , Warning , TEXT( "beginplay" ) )
 
-	GetCharacterMovement()->MaxWalkSpeed = moveSpeed;
+	moveSpeed = GetCharacterMovement()->MaxWalkSpeed;
 
 	GetMesh()->SetScalarParameterValueOnMaterials( TEXT( "Power" ) , 10 );
 
@@ -270,4 +277,5 @@ void AVREnemyPlayer::GetLifetimeReplicatedProps( TArray<FLifetimeProperty>& OutL
 
 	DOREPLIFETIME( AVREnemyPlayer , isHandUP );
 	DOREPLIFETIME( AVREnemyPlayer , canCheckActor );
+	//DOREPLIFETIME( AVREnemyPlayer , countHPChip );
 }

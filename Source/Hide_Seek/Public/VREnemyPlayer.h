@@ -29,7 +29,10 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float moveSpeed = 600;
+	float moveSpeed;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	class USphereComponent* handSphereColl;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	class UInputMappingContext* IMC_VREnemyInput;
@@ -105,7 +108,7 @@ public:
 	bool activeThirdSkill;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	int32 CountHPChip;
+	int32 countHPChip;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool inAltar;

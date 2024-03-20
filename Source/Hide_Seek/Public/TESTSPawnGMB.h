@@ -17,14 +17,14 @@ class HIDE_SEEK_API ATESTSPawnGMB : public AGameModeBase
 public:
 	ATESTSPawnGMB();
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TSubclassOf<class AVREnemyPlayer> firstPawn;
-
 	UPROPERTY( EditAnywhere , BlueprintReadWrite )
-	TSubclassOf<class ACharacter> secondPawn;
+	TSubclassOf<class AHidePlayer> firstPawn;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TSubclassOf<class AVREnemyPlayer> secondPawn;
 
 	//UPROPERTY( EditAnywhere , BlueprintReadWrite )
-	//TSubclassOf<class AHidePlayer> secondPawn;
+	//TSubclassOf<class ACharacter> secondPawn;
 
 protected:
 
