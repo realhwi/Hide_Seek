@@ -26,7 +26,8 @@ public:
 	UPROPERTY( EditDefaultsOnly)
 	TSubclassOf<class UUserWidget>LifeUIFactory;
 
-	// 생명칩 추가 
+	// 생명칩 추가
+	UFUNCTION(BlueprintCallable)
 	void AddLife();
 	// 생명칩 삭제 
 	void RemoveLife( int32 index = -1 );

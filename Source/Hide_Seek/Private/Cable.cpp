@@ -4,9 +4,12 @@
 #include "Cable.h"
 #include "CableComponent.h"
 #include "HidePlayer.h"
-#include "Components/SphereComponent.h"
+#include "Kismet/GameplayStatics.h"
 
-// Sets default values
+
+int32 ACable::ApplyMaterialsCallCount = 0;
+int32 ACable::TotalBlueprintInstances = 3;
+// TMap<int32 , bool> ACable::MaterialsAppliedStatus;
 ACable::ACable()
 {
 	PrimaryActorTick.bCanEverTick = true;
@@ -16,33 +19,42 @@ ACable::ACable()
 	// Initialize Start Static Mesh
 	StartStaticMesh = CreateDefaultSubobject<UStaticMeshComponent>( TEXT( "StartStaticMesh" ) );
 	StartStaticMesh->SetupAttachment( RootComponent );
+	StartMesh1 = CreateDefaultSubobject<UStaticMeshComponent>( TEXT( "StartMesh1" ) );
+	StartMesh1->SetupAttachment( RootComponent );
+	StartMesh2 = CreateDefaultSubobject<UStaticMeshComponent>( TEXT( "StartMesh2" ) );
+	StartMesh2->SetupAttachment( RootComponent );
 
 	// 케이블 컴포넌트 및 기타 컴포넌트 초기화
 	CableComponent = CreateDefaultSubobject<UCableComponent>( TEXT( "CableComponent" ) );
 	CableComponent->SetupAttachment( StartStaticMesh );
 	CableComponent->CableWidth = 10.0f; // 케이블의 두께를 10으로 설정
 
+	CableComp1 = CreateDefaultSubobject<UCableComponent>( TEXT( "CableComp1" ) );
+	CableComp1->SetupAttachment( StartMesh1 );
+	CableComp1->CableWidth = 10.0f; // 케이블의 두께를 10으로 설정
+
+	CableComp2 = CreateDefaultSubobject<UCableComponent>( TEXT( "CableComp2" ) );
+	CableComp2->SetupAttachment( StartMesh2 );
+	CableComp2->CableWidth = 10.0f; // 케이블의 두께를 10으로 설정
+
 	// Initialize MoveMesh
 	MoveMesh = CreateDefaultSubobject<UStaticMeshComponent>( TEXT( "MoveMesh" ) );
 	MoveMesh->SetupAttachment( RootComponent );
-
-	// Initialize End Sphere Collision
-	EndSphereCollision = CreateDefaultSubobject<USphereComponent>( TEXT( "EndSphereCollision" ) );
-	EndSphereCollision->SetupAttachment( CableComponent );
-	EndSphereCollision->InitSphereRadius( 15.0f );
-	EndSphereCollision->SetCollisionProfileName( TEXT( "OverlapAllDynamic" ) );
+	MoveMesh1 = CreateDefaultSubobject<UStaticMeshComponent>( TEXT( "MoveMesh1" ) );
+	MoveMesh1->SetupAttachment( RootComponent );
+	MoveMesh2 = CreateDefaultSubobject<UStaticMeshComponent>( TEXT( "MoveMesh2" ) );
+	MoveMesh2->SetupAttachment( RootComponent );
 
 	// Initialize New End Static Mesh
 	NewEndStaticMesh = CreateDefaultSubobject<UStaticMeshComponent>( TEXT( "NewEndStaticMesh" ) );
 	NewEndStaticMesh->SetupAttachment( RootComponent );
+	NewEndMesh1 = CreateDefaultSubobject<UStaticMeshComponent>( TEXT( "NewEndMesh1" ) );
+	NewEndMesh1->SetupAttachment( RootComponent );
+	NewEndMesh2 = CreateDefaultSubobject<UStaticMeshComponent>( TEXT( "NewEndMesh2" ) );
+	NewEndMesh2->SetupAttachment( RootComponent );
 
-	// Initialize New End Sphere Collision
-	NewEndSphereCollision = CreateDefaultSubobject<USphereComponent>( TEXT( "NewEndSphereCollision" ) );
-	NewEndSphereCollision->SetupAttachment( NewEndStaticMesh );
-	NewEndSphereCollision->InitSphereRadius( 15.0f );
-	NewEndSphereCollision->SetCollisionProfileName( TEXT( "OverlapAllDynamic" ) );
-
-	// EndSphereCollision->OnComponentBeginOverlap.AddDynamic( this , &ACable::OnCableEndOverlap );
+	CurrentStage = ConnectionStage::Init;
+	// ExpectedNumMaterialsApplied = 3;
 }
 
 // Called when the game starts or when spawned
@@ -52,27 +64,27 @@ void ACable::BeginPlay()
 
 	// 케이블 컴포넌트를 StartStaticMesh에 붙이기
 	CableComponent->SetupAttachment( StartStaticMesh );
-	
+	CableComp1->SetupAttachment( StartMesh1 );
+	CableComp2->SetupAttachment( StartMesh2 );
+
 	// 케이블의 끝을 스피어 콜리전에 연결
-	//CableComponent->EndLocation = EndSphereCollision->GetComponentLocation();
 	CableComponent->SetAttachEndToComponent( MoveMesh , NAME_None );
+	CableComp1->SetAttachEndToComponent( MoveMesh1 , NAME_None );
+	CableComp2->SetAttachEndToComponent( MoveMesh2 , NAME_None );
 
+	// 초기 위치 및 회전값 저장
+	InitialMoveMeshLocation = MoveMesh->GetComponentLocation();
+	InitialMoveMeshRotation = MoveMesh->GetComponentRotation();
 
-	// 로그를 통해 케이블 컴포넌트와 스피어 콜리전 설정 확인
-	UE_LOG( LogTemp , Warning , TEXT( "CableComponent is attached to StartStaticMesh." ) );
+	InitialMoveMesh1Location = MoveMesh1->GetComponentLocation();
+	InitialMoveMesh1Rotation = MoveMesh1->GetComponentRotation();
+
+	InitialMoveMesh2Location = MoveMesh2->GetComponentLocation();
+	InitialMoveMesh2Rotation = MoveMesh2->GetComponentRotation();
 }
 
-// Called every frame
-void ACable::Tick(float DeltaTime)
+void ACable::HandleCableGrabbed( UPrimitiveComponent* RightController , UPrimitiveComponent* ComponentToAttach )
 {
-	Super::Tick(DeltaTime);
-
-}
-
-
-void ACable::HandleCableGrabbed(UPrimitiveComponent* RightController )
-{
-
 	// RightController의 유효성 검사
 	if (!RightController)
 	{
@@ -80,44 +92,254 @@ void ACable::HandleCableGrabbed(UPrimitiveComponent* RightController )
 		return;
 	}
 
-	MoveMesh->AttachToComponent( RightController , FAttachmentTransformRules::SnapToTargetIncludingScale , FName( TEXT( "Hand_rPoint" ) ) );
-	UE_LOG( LogTemp , Warning , TEXT( "Cable MoveMesh attached to RightController." ) );
+	// ComponentToAttach를 RightController에 부착
+	ComponentToAttach->AttachToComponent( RightController , FAttachmentTransformRules::SnapToTargetNotIncludingScale );
 
-	//MoveMesh->SetRelativeLocation( FVector( 0 , 0 , 0 ) );
-	//MoveMesh->SetRelativeRotation( FRotator( 0 , 0 , 0 ) );
+	// 현재 그랩한 컴포넌트로 설정
+	CurrentlyGrabbedComp = ComponentToAttach;
+	UE_LOG( LogTemp , Warning , TEXT( "Component attached to RightController." ) );
+
 }
 
-void ACable::HandleCableReleased()
+void ACable::HandleCableReleased( UPrimitiveComponent* NewEndComponent )
 {
-	// CableComponent가 유효한지 확인
-	if (!CableComponent)
+	if (!CurrentlyGrabbedComp || !NewEndComponent)
 	{
-		UE_LOG( LogTemp , Error , TEXT( "CableComponent is nullptr." ) );
+		UE_LOG( LogTemp , Warning , TEXT( "Either grabbed component or NewEndComponent is null." ) );
 		return;
 	}
 
-	// NewEndStaticMesh가 유효한지 확인
-	if (!NewEndStaticMesh)
+	CurrentlyGrabbedComp->DetachFromComponent( FDetachmentTransformRules::KeepWorldTransform );
+	CurrentlyGrabbedComp->AttachToComponent( NewEndComponent , FAttachmentTransformRules::SnapToTargetNotIncludingScale );
+	UE_LOG( LogTemp , Warning , TEXT( "Attempted to attach %s to %s." ) , *GetNameSafe( CurrentlyGrabbedComp ) , *GetNameSafe( NewEndComponent ) );
+
+
+	// 케이블 컴포넌트의 연결 상태 확인 및 업데이트
+	if (CurrentlyGrabbedComp == MoveMesh && NewEndComponent == NewEndStaticMesh)
 	{
-		UE_LOG( LogTemp , Error , TEXT( "NewEndStaticMesh is nullptr." ) );
-		return;
+		bIsCableComponentConnected = true;
+		//ConnectionCompletedCount++;
+
+	}
+	else if (CurrentlyGrabbedComp == MoveMesh1 && NewEndComponent == NewEndMesh1)
+	{
+		bIsCableComp1Connected = true;
+		//ConnectionCompletedCount++;
+	}
+	else if (CurrentlyGrabbedComp == MoveMesh2 && NewEndComponent == NewEndMesh2)
+	{
+		bIsCableComp2Connected = true;
+		//ConnectionCompletedCount++;
 	}
 
-	// MoveMesh가 있는지 확인
-	if (!MoveMesh)
-	{
-		UE_LOG( LogTemp , Error , TEXT( "MoveMesh is nullptr." ) );
-		return;
-	}
-
-	// MoveMesh를 새로운 끝 지점에 연결
-	CableComponent->SetAttachEndToComponent( NewEndStaticMesh , NAME_None );
-	UE_LOG( LogTemp , Warning , TEXT( "Cable released from RightController and end location updated to NewEndStaticMesh." ) );
-
-	// MoveMesh->DetachFromComponent( FDetachmentTransformRules::KeepWorldTransform );
-	// CableComponent->EndLocation = NewEndSphereCollision->GetComponentLocation();
+	ConnectionCompletedCount++;
+	UE_LOG( LogTemp , Warning , TEXT( "All cable components successfully connected." ) );
+	// 머터리얼 변경 또는 초기 위치로 복귀하는 로직 호출
+	CheckAndApplyMaterial();
+	
 }
 
+void ACable::CheckAndApplyMaterial()
+{
+	UE_LOG( LogTemp , Warning , TEXT( "Checking cable connections. ConnectionCompletedCount: %d, Expected: %d" ) , ConnectionCompletedCount , TotalCableComponents );
+
+	// 모든 케이블 컴포넌트의 연결이 완료되었는지 확인
+	if (ConnectionCompletedCount == TotalCableComponents)
+	{
+		UE_LOG( LogTemp , Warning , TEXT( "All components reported as connected." ) );
+
+		if (bIsCableComponentConnected && bIsCableComp1Connected && bIsCableComp2Connected)
+		{
+			UE_LOG( LogTemp , Warning , TEXT( "All connections valid, applying materials." ) );
+
+			// 모든 연결이 성공적으로 이루어졌다면 머터리얼 적용
+			ApplyMaterials();
+		}
+		else
+		{
+			UE_LOG( LogTemp , Warning , TEXT( "One or more connections invalid, resetting to initial positions." ) );
+
+			// 하나라도 연결이 실패했다면 초기 위치로 복귀
+			ResetToInitialPositions();
+		}
+
+		// 연결 상태 변수 및 연결 완료 횟수 초기화
+		UE_LOG( LogTemp , Warning , TEXT( "Not all connections valid, resetting to initial positions." ) );
+
+		ResetConnectionStates();
+	}
+	else
+	{
+		UE_LOG( LogTemp , Warning , TEXT( "Connection count does not match expected total. Skipping material application and reset." ) );
+	}
+}
+
+void ACable::ApplyMaterials()
+{
+	/*for (const auto& Status : MaterialsAppliedStatus)
+	{
+		UE_LOG( LogTemp , Warning , TEXT( "Index: %d, Applied: %s" ) , Status.Key , Status.Value ? TEXT( "True" ) : TEXT( "False" ) );
+	}*/
+
+	// 세 컴포넌트 세트가 각각 올바르게 연결된 경우, 머터리얼 변경
+	StartStaticMesh->SetMaterial( 0 , Material1 );
+	CableComponent->SetMaterial( 0 , Material1 );
+	NewEndStaticMesh->SetMaterial( 0 , Material1 );
+
+	StartMesh1->SetMaterial( 0 , Material2 );
+	CableComp1->SetMaterial( 0 , Material2 );
+	NewEndMesh1->SetMaterial( 0 , Material2 );
+
+	StartMesh2->SetMaterial( 0 , Material3 );
+	CableComp2->SetMaterial( 0 , Material3 );
+	NewEndMesh2->SetMaterial( 0 , Material3 );
+
+	// ApplyMaterials 호출 횟수 증가
+	ApplyMaterialsCallCount++;
+	UE_LOG( LogTemp , Warning , TEXT( "ApplyMaterials called. Current count: %d" ) , ApplyMaterialsCallCount );
 
 
+	// 모든 인스턴스가 ApplyMaterials를 호출했는지 확인
+	if (ApplyMaterialsCallCount >= TotalBlueprintInstances)
+	{
+		UE_LOG( LogTemp , Warning , TEXT( "All instances have called ApplyMaterials. Executing VFX and setting stage to Final." ) );
+		// VFX 실행
+		ExecuteVFX();
+		// 모든 처리가 끝났다면 상태를 Final로 변경
+		CurrentStage = ConnectionStage::Final;
+		UE_LOG( LogTemp , Warning , TEXT( "Stage is now Final." ) );
+	}
 
+	//// 현재 인스턴스의 Index로 맵을 업데이트
+	//if (!MaterialsAppliedStatus.Contains( Index )) {
+	//	MaterialsAppliedStatus.Add( Index , true );
+	//	UE_LOG( LogTemp , Warning , TEXT( "Index: %d marked as applied." ) , Index );
+	//}
+	//else {
+	//	// 이미 존재하는 경우, 추가 로직 없음
+	//	UE_LOG( LogTemp , Warning , TEXT( "Index: %d already applied, skipping." ) , Index );
+	//}
+
+	//// 모든 인스턴스가 ApplyMaterials를 호출했는지 확인
+	//if (MaterialsAppliedStatus.Num() >= ExpectedNumMaterialsApplied) {
+	//	bool allApplied = true;
+	//	for (const auto& Elem : MaterialsAppliedStatus) {
+	//		if (!Elem.Value) {
+	//			allApplied = false;
+	//			break;
+	//		}
+	//	}
+
+	//	if (allApplied) {
+	//		// VFX 실행
+	//		AHidePlayer* PlayerActor = Cast<AHidePlayer>( UGameplayStatics::GetPlayerCharacter( GetWorld() , 0 ) );
+	//		if (PlayerActor && VFX) {
+	//			UE_LOG( LogTemp , Warning , TEXT( "VFX" ) );
+	//			UGameplayStatics::SpawnEmitterAtLocation( GetWorld() , VFX , PlayerActor->GetActorLocation() );
+
+	//			// 맵을 초기화하여 다음 번 사용을 위해 준비합니다.
+	//			MaterialsAppliedStatus.Empty();
+	//		}
+	//	}
+	//}
+}
+
+void ACable::ResetToInitialPositions()
+{
+	// Log current positions before resetting
+	UE_LOG( LogTemp , Warning , TEXT( "Resetting positions. Current positions: MoveMesh: %s, MoveMesh1: %s, MoveMesh2: %s" ) ,
+		*MoveMesh->GetComponentLocation().ToString() ,
+		*MoveMesh1->GetComponentLocation().ToString() ,
+		*MoveMesh2->GetComponentLocation().ToString() );
+
+	// NewEndStaticMesh, NewEndMesh1, NewEndMesh2에 붙어 있던 End 지점을 떼는 작업
+	if (bIsCableComponentConnected)
+	{
+		CableComponent->DetachFromComponent( FDetachmentTransformRules::KeepWorldTransform );
+		// CableComponent를 MoveMesh로 다시 Attach
+		CableComponent->AttachToComponent( MoveMesh , FAttachmentTransformRules::SnapToTargetNotIncludingScale );
+	}
+
+	if (bIsCableComp1Connected)
+	{
+		CableComp1->DetachFromComponent( FDetachmentTransformRules::KeepWorldTransform );
+		// CableComp1을 MoveMesh1로 다시 Attach
+		CableComp1->AttachToComponent( MoveMesh1 , FAttachmentTransformRules::SnapToTargetNotIncludingScale );
+	}
+
+	if (bIsCableComp2Connected)
+	{
+		CableComp2->DetachFromComponent( FDetachmentTransformRules::KeepWorldTransform );
+		// CableComp2를 MoveMesh2로 다시 Attach
+		CableComp2->AttachToComponent( MoveMesh2 , FAttachmentTransformRules::SnapToTargetNotIncludingScale );
+	}
+
+	MoveMesh->SetWorldLocation( InitialMoveMeshLocation );
+	MoveMesh1->SetWorldLocation( InitialMoveMesh1Location );
+	MoveMesh2->SetWorldLocation( InitialMoveMesh2Location );
+
+	// Log new positions after resetting
+	UE_LOG( LogTemp , Warning , TEXT( "New positions after resetting: MoveMesh: %s, MoveMesh1: %s, MoveMesh2: %s" ) ,
+		*MoveMesh->GetComponentLocation().ToString() ,
+		*MoveMesh1->GetComponentLocation().ToString() ,
+		*MoveMesh2->GetComponentLocation().ToString() );
+}
+
+void ACable::UpdateStage()
+{
+	if (CurrentStage == ConnectionStage::Init)
+	{
+		UE_LOG( LogTemp , Warning , TEXT( "Stage changing from Init to Mid." ) );
+		CurrentStage = ConnectionStage::Mid;
+	}
+	else if (CurrentStage == ConnectionStage::Mid)
+	{
+		UE_LOG( LogTemp , Warning , TEXT( "Stage changing from Mid to Complete." ) );
+		CurrentStage = ConnectionStage::Complete;
+		UE_LOG( LogTemp , Warning , TEXT( "Stage is now Complete." ) );
+	}
+}
+
+void ACable::ExecuteVFX()
+{
+	if (CurrentStage != ConnectionStage::Complete)
+	{
+		UE_LOG( LogTemp , Warning , TEXT( "ExecuteVFX called, but the current stage is not Complete." ) );
+		return;
+	}
+
+	AHidePlayer* PlayerActor = Cast<AHidePlayer>( UGameplayStatics::GetPlayerCharacter( GetWorld() , 0 ) );
+	if (!PlayerActor)
+	{
+		UE_LOG( LogTemp , Error , TEXT( "Failed to cast to AHidePlayer or get the player character." ) );
+		return;
+	}
+
+	if (!VFX)
+	{
+		UE_LOG( LogTemp , Error , TEXT( "VFX is nullptr." ) );
+		return;
+	}
+
+	/*UE_LOG( LogTemp , Warning , TEXT( "Executing VFX at player location." ) );
+	UGameplayStatics::SpawnEmitterAtLocation( GetWorld() , VFX , PlayerActor->GetActorLocation() );
+	if (CurrentStage == ConnectionStage::Complete)
+	{
+		AHidePlayer* PlayerActor = Cast<AHidePlayer>( UGameplayStatics::GetPlayerCharacter( GetWorld() , 0 ) );
+		if (PlayerActor && VFX) 
+		{
+			UE_LOG( LogTemp , Warning , TEXT( "VFX" ) );
+			UGameplayStatics::SpawnEmitterAtLocation( GetWorld() , VFX , PlayerActor->GetActorLocation() );
+		}
+	}*/
+}
+
+void ACable::ResetConnectionStates()
+{
+	UE_LOG( LogTemp , Warning , TEXT( "Resetting connection states." ) );
+	// 연결 상태 변수 및 연결 완료 횟수 초기화
+	bIsCableComponentConnected = false;
+	bIsCableComp1Connected = false;
+	bIsCableComp2Connected = false;
+	ConnectionCompletedCount = 0;
+}

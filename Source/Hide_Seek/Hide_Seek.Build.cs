@@ -8,7 +8,7 @@ public class Hide_Seek : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 	
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput", "HeadMountedDisplay","UMG" });
+		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput", "HeadMountedDisplay","UMG" , "Niagara" });
 
 		PrivateDependencyModuleNames.AddRange(new string[] { "XRBase", "CableComponent" });
 

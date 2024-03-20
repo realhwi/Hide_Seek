@@ -29,7 +29,10 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float moveSpeed = 600;
+	float moveSpeed;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	class USphereComponent* handSphereColl;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	class UInputMappingContext* IMC_VREnemyInput;
@@ -65,14 +68,14 @@ private:
 	UFUNCTION()
 	void EnemyLook(const FInputActionValue& value);
 
-	//UFUNCTION()
-	//void EInteractionStart(const FInputActionValue& value);
+	UFUNCTION()
+	void EInteractionStart(const FInputActionValue& value);
 
 	//UFUNCTION()
 	//void EInteractionTriggered(const FInputActionValue& value);
 
-	//UFUNCTION()
-	//void EInteractionComplete(const FInputActionValue& value);
+	UFUNCTION()
+	void EInteractionComplete(const FInputActionValue& value);
 
 	bool bHasController = false;
 	//UPROPERTY()
@@ -105,13 +108,13 @@ public:
 	bool activeThirdSkill;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	int32 CountHPChip;
+	int32 countHPChip;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool inAltar;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	class AActor* playerChar;
+	class AHidePlayer* playerChar;
 
 	UPROPERTY( EditAnywhere , BlueprintReadWrite )
 	class AActor* door;
@@ -126,16 +129,25 @@ public:
 	float findActorRadius = 150;
 
 	UPROPERTY( EditAnywhere , BlueprintReadWrite )
-	float addIBLockTime;
+	float itemLockTime;
 
 	UPROPERTY( EditAnywhere , BlueprintReadWrite )
-	float addEBLockTime;
+	float electDuctLockTime;
 
 	UPROPERTY( EditAnywhere , BlueprintReadWrite )
-	float addEscapeLockTime;
+	float escapeObjLockTime;
 
 	UPROPERTY( EditAnywhere , BlueprintReadWrite, Replicated )
 	bool isHandUP;
+
+	UPROPERTY( EditAnywhere , BlueprintReadWrite, Replicated )
+	bool canCheckActor;
+
+	UFUNCTION(Server, Reliable)
+	void ServerRPC_ActionHandUp();
+
+	UFUNCTION( Server , Reliable )
+	void ServerRPC_ActionHandDown();
 
 	virtual void GetLifetimeReplicatedProps( TArray<FLifetimeProperty>& OutLifetimeProps ) const override;
 };

@@ -76,6 +76,10 @@ private:
 
 	UPROPERTY( Transient )
 	UPrimitiveComponent* GrabbedComponent; // 현재 잡고 있는 컴포넌트
+	UPROPERTY( Transient )
+	UMaterialInterface* OriginalMaterial1;
+	UPROPERTY( Transient )
+	UMaterialInterface* OriginalMaterial2;
 
 public:
 
@@ -108,6 +112,10 @@ public:
 	void RightGrabbing();
 	//이걸로 누름/땜 상태를 제어할 수 있음
 	bool bIsGrabbed = false;
+	bool bIsSecondGrabAttempted = false;
+
+	UPROPERTY( EditAnywhere , BlueprintReadWrite )
+	ACable* CableActor = nullptr;
 
 	//Trigger Input 버튼 누를때 실행됨
 	UFUNCTION(BlueprintCallable)
@@ -128,6 +136,12 @@ public:
 
 	UFUNCTION()
 	void OnIAUnCrouch( const FInputActionValue& Value );
+
+	UFUNCTION()
+	void CheckOverlapWithNewEndStaticMesh();
+
+	UFUNCTION()
+	void AttemptToGrabCable( const TArray<FOverlapResult>& OverlapResults );
 
 	// 쑤그리기 
 	UPROPERTY( EditAnywhere , BlueprintReadWrite )
@@ -196,18 +210,26 @@ public:
 	UPROPERTY( EditDefaultsOnly , BlueprintReadWrite )
 	TSubclassOf<class UGameOver> GameOverUIFactory;
 
-	UPROPERTY( EditDefaultsOnly )
 	// 생명 최대 값 
-	int32 maxLifeCount = 3;
+	UPROPERTY( EditDefaultsOnly )
+	int32 maxLifeCount = 4;
+
 	// 1부터 시작해서 max까지
-	int32 LifeCount = maxLifeCount;
+	UPROPERTY( BlueprintReadWrite , Category = "Player" )
+	int32 LifeCount = maxLifeCount-1;
+
+	UFUNCTION()
+	void IncreaseLife();
+
+	UFUNCTION()
+	void HiddenPlayer();
 
 	// 충돌 확인 
 	UPROPERTY( EditAnywhere )
 	class UParticleSystem* VFX;
 
 	// Die 
-	UFUNCTION()
+	UFUNCTION( BlueprintCallable , Category = "Player" )
 	void OnLifeDepleted();
 
 	UFUNCTION()
@@ -223,7 +245,36 @@ public:
 
 	void UpdateTriggerStatus( bool bPressed );
 
-	UPROPERTY( EditAnywhere, BlueprintReadWrite )
-	ACable* CableActor;
+	// 네트워크 -----------------------------------------------------
+	// 클라이언트에서 실행할 RPC 구현 
+	UPROPERTY( ReplicatedUsing = OnRep_IsHidden )
+	bool bIsHidden;
 
+	// 클라이언트가 서버에 Hidden 상태 변경을 요청
+	UFUNCTION( Server , Reliable , WithValidation )
+	void Server_SetPlayerHidden( bool bNewHidden );
+
+	// 클라이언트에서 실행되는 Hidden 상태를 설정
+	UFUNCTION()
+	void SetPlayerHidden();
+
+	// 클라이언트에서 실행되는 Hidden 상태를 해제
+	UFUNCTION()
+	void RestoreVisibility();
+
+	// 서버에서 상태 변경 후 복제된 경우 호출
+	UFUNCTION()
+	void OnRep_IsHidden();
+
+	// 머티리얼을 투명하게 변경
+	void BecomeInvisibleToOtherPlayers();
+	// 원래 머티리얼로 되돌리기 
+	void BecomeVisibleToOtherPlayers();
+	// 플레이어 히든
+	void BecomeInvisibleToLocalPlayer();
+	// 히든 종료 
+	void BecomeVisibleToLocalPlayer();
+
+	virtual void GetLifetimeReplicatedProps( TArray< FLifetimeProperty >& OutLifetimeProps ) const override;
+	
 };

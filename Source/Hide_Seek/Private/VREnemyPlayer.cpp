@@ -60,6 +60,13 @@ AVREnemyPlayer::AVREnemyPlayer()
 	//	// rightHandMesh->SetRelativeLocationAndRotation(FVector(-3, 3.5, 4.5), FRotator(25, 0, 90));
 	//}
 
+	handSphereColl = CreateDefaultSubobject<USphereComponent>( TEXT( "HandSphereColl" ) );
+	handSphereColl->SetupAttachment( GetMesh() );
+	handSphereColl->AttachToComponent( GetMesh() , FAttachmentTransformRules::SnapToTargetIncludingScale , TEXT( "EnemyRHPoint" ) );
+	handSphereColl->SetRelativeLocation( FVector( -10 , 0 , 0 ) );
+	handSphereColl->SetSphereRadius( 10.f );
+	handSphereColl->ComponentTags.Add( FName( "EnemyHand" ) );
+
 	bReplicates = true;
 }
 
@@ -72,7 +79,7 @@ void AVREnemyPlayer::BeginPlay()
 
 	//UE_LOG( LogTemp , Warning , TEXT( "beginplay" ) )
 
-	GetCharacterMovement()->MaxWalkSpeed = moveSpeed;
+	moveSpeed = GetCharacterMovement()->MaxWalkSpeed;
 
 	GetMesh()->SetScalarParameterValueOnMaterials( TEXT( "Power" ) , 10 );
 
@@ -124,9 +131,9 @@ void AVREnemyPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 		inputSystem->BindAction(IA_VREnemyMove, ETriggerEvent::Triggered, this, &AVREnemyPlayer::EnemyMove);
 		inputSystem->BindAction(IA_VREnemyLook, ETriggerEvent::Triggered, this, &AVREnemyPlayer::EnemyLook);
 
-		//inputSystem->BindAction(IA_EnemyInteraction, ETriggerEvent::Started, this, &AVREnemyPlayer::EInteractionStart);
+		inputSystem->BindAction(IA_EnemyInteraction, ETriggerEvent::Started, this, &AVREnemyPlayer::EInteractionStart);
 		//inputSystem->BindAction(IA_EnemyInteraction, ETriggerEvent::Triggered, this, &AVREnemyPlayer::EInteractionOnGoing);
-		//inputSystem->BindAction(IA_EnemyInteraction, ETriggerEvent::Completed, this, &AVREnemyPlayer::EInteractionComplete);
+		inputSystem->BindAction(IA_EnemyInteraction, ETriggerEvent::Completed, this, &AVREnemyPlayer::EInteractionComplete);
 	}
 }
 
@@ -160,12 +167,22 @@ void AVREnemyPlayer::EnemyLook(const FInputActionValue& value)
 	}
 }
 
+void AVREnemyPlayer::EInteractionStart(const FInputActionValue& value)
+{
+	ServerRPC_ActionHandUp();
+}
+
+void AVREnemyPlayer::EInteractionComplete(const FInputActionValue& value)
+{
+	ServerRPC_ActionHandDown();
+}
+
 void AVREnemyPlayer::FirstSkillActive()
 {
 	if (activeSkillTime == 10 && activeFirstSkill == false)
 	{
 		GetMesh()->SetScalarParameterValueOnMaterials( TEXT( "Power" ) , 7 );
-		addIBLockTime = 3;
+		itemLockTime = 3;
 		activeFirstSkill = true;
 	}
 }
@@ -175,8 +192,8 @@ void AVREnemyPlayer::SecondSkillActive()
 	if(activeSkillTime == 20 && activeSecondSkill == false)
 	{
 		GetMesh()->SetScalarParameterValueOnMaterials( TEXT( "Power" ) , 5);
-		addIBLockTime = 5;
-		addEBLockTime = 3;
+		itemLockTime = 5;
+		electDuctLockTime = 3;
 		activeSecondSkill = true;
 	}
 }
@@ -186,10 +203,10 @@ void AVREnemyPlayer::ThirdSkillActive()
 	if (activeSkillTime == 30 && activeThirdSkill == false)
 	{
 		GetMesh()->SetScalarParameterValueOnMaterials( TEXT( "Power" ) , 3 );
-		addIBLockTime = 8;
-		addEBLockTime = 5;
-		addEscapeLockTime = 3;
-		GetCharacterMovement()->MaxWalkSpeed = 700;
+		itemLockTime = 8;
+		electDuctLockTime = 5;
+		escapeObjLockTime = 3;
+		moveSpeed = 700;
 		activeThirdSkill = true;
 	}
 	
@@ -242,9 +259,23 @@ void AVREnemyPlayer::ThirdSkillActive()
 //	moveSpeed = 600;
 //}
 
+void AVREnemyPlayer::ServerRPC_ActionHandUp_Implementation()
+{
+	isHandUP = true;
+	canCheckActor = true;
+}
+
+void AVREnemyPlayer::ServerRPC_ActionHandDown_Implementation()
+{
+	isHandUP = false;
+	canCheckActor = false;
+}
+
 void AVREnemyPlayer::GetLifetimeReplicatedProps( TArray<FLifetimeProperty>& OutLifetimeProps ) const
 {
 	Super::GetLifetimeReplicatedProps( OutLifetimeProps );
 
-	DOREPLIFETIME(AVREnemyPlayer, isHandUP)
+	DOREPLIFETIME( AVREnemyPlayer , isHandUP );
+	DOREPLIFETIME( AVREnemyPlayer , canCheckActor );
+	//DOREPLIFETIME( AVREnemyPlayer , countHPChip );
 }
