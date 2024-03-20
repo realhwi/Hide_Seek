@@ -79,7 +79,6 @@ void AVREnemyPlayer::BeginPlay()
 
 	//UE_LOG( LogTemp , Warning , TEXT( "beginplay" ) )
 
-	moveSpeed = GetCharacterMovement()->MaxWalkSpeed;
 
 	GetMesh()->SetScalarParameterValueOnMaterials( TEXT( "Power" ) , 10 );
 
@@ -136,6 +135,26 @@ void AVREnemyPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 		inputSystem->BindAction(IA_EnemyInteraction, ETriggerEvent::Completed, this, &AVREnemyPlayer::EInteractionComplete);
 	}
 }
+
+void AVREnemyPlayer::ChangeSpeed()
+{
+	UE_LOG( LogTemp , Warning , TEXT( "AVREnemyPlayer::ServerChangeSpeed_Implementation." ) );
+
+	GetCharacterMovement()->MaxWalkSpeed = 100;
+
+	FTimerHandle TimerHandle;
+	GetWorld()->GetTimerManager().SetTimer( TimerHandle , this , &AVREnemyPlayer::RestorePlayerSpeed , 10.0f , false );
+}
+
+
+void AVREnemyPlayer::RestorePlayerSpeed()
+{
+	//moveSpeed 기본값으로 초기화
+	GetCharacterMovement()->MaxWalkSpeed = 600;
+
+	UE_LOG( LogTemp , Warning , TEXT( "Speed restored." ) );
+}
+
 
 void AVREnemyPlayer::EnemyMove(const FInputActionValue& value)
 {
@@ -206,7 +225,6 @@ void AVREnemyPlayer::ThirdSkillActive()
 		itemLockTime = 8;
 		electDuctLockTime = 5;
 		escapeObjLockTime = 3;
-		moveSpeed = 700;
 		activeThirdSkill = true;
 	}
 	

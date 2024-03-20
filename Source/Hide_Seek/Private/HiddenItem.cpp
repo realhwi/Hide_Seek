@@ -41,7 +41,7 @@ void AHiddenItem::OnOverlapBegin(UPrimitiveComponent* OverlappedComponent, AActo
 {
 	if (AHidePlayer* HidePlayer = Cast<AHidePlayer>( OtherActor ))
 	{
-		HidePlayer->HiddenPlayer();
+		HidePlayer->ServerHideMyself();
 		UE_LOG( LogTemp , Warning , TEXT( "Overlap." ) );
 		Destroy();
 	}

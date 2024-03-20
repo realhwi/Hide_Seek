@@ -45,21 +45,18 @@ void ASpeedItem::OnOverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor
 	{
 		if (AVREnemyPlayer* VREnemyPlayer = Cast<AVREnemyPlayer>( UGameplayStatics::GetPlayerCharacter( GetWorld() , 0 ) ))
 		{
-			float EnemySpeed = VREnemyPlayer->moveSpeed;
 
-			// 획득 후 일정 시간이 지나면 스피드를 원래대로 복원하기 위해 타이머 설정
-			FTimerHandle TimerHandle;
-			GetWorld()->GetTimerManager().SetTimer( TimerHandle , this , &ASpeedItem::RestorePlayerSpeed , 10.0f , false );
-
-			UE_LOG( LogTemp , Warning , TEXT( "Item picked up. Speed Down" ) );
+			if(HasAuthority())
+			{
+				VREnemyPlayer->ChangeSpeed();
+			}
 		}
-
-		//auto pc = Cast<AVREnemyPlayer>()
 		UE_LOG( LogTemp , Warning , TEXT( "Overlap." ) );
 		Destroy();
 	}
 }
 
+/*
 void ASpeedItem::RestorePlayerSpeed()
 {
 	if (AVREnemyPlayer* VREnemyPlayer = Cast<AVREnemyPlayer>( UGameplayStatics::GetPlayerCharacter( GetWorld() , 0 ) ))
@@ -68,5 +65,6 @@ void ASpeedItem::RestorePlayerSpeed()
 		UE_LOG( LogTemp , Warning , TEXT( "Speed restored." ) );
 	}
 }
+*/
 
 

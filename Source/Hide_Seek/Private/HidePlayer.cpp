@@ -308,7 +308,7 @@ const float MinGrabDistance = 15.0f;
 void AHidePlayer::CheckOverlapWithNewEndStaticMesh()
 {
 	UE_LOG( LogTemp , Warning , TEXT( "CheckOverlapWithNewEndStaticMesh called. bIsGrabbed: %s, CableActor: %s" ) , bIsGrabbed ? TEXT( "true" ) : TEXT( "false" ) , CableActor ? *CableActor->GetName() : TEXT( "nullptr" ) );
-	if (!bIsSecondGrabAttempted || !CableActor ) return;
+	if (!bIsSecondGrabAttempted || !CableActor) return;
 
 	// 가장 가까운 NewEnd 컴포넌트와 그 거리를 저장할 변수들
 	UPrimitiveComponent* ClosestNewEndComponent = nullptr;
@@ -316,18 +316,18 @@ void AHidePlayer::CheckOverlapWithNewEndStaticMesh()
 
 	// CableActor의 NewEnd 컴포넌트들을 확인하고 가장 가까운 것을 찾음
 	TArray<UPrimitiveComponent*> NewEndComponents = { CableActor->NewEndStaticMesh, CableActor->NewEndMesh1, CableActor->NewEndMesh2 };
-		for (UPrimitiveComponent* Component : NewEndComponents)
+	for (UPrimitiveComponent* Component : NewEndComponents)
+	{
+		if (Component)
 		{
-			if (Component)
+			float Distance = FVector::Dist( Component->GetComponentLocation() , RightController->GetComponentLocation() );
+			if (Distance < MinDistance && Distance <= MinGrabDistance)  // 거리가 최소 거리 조건보다 작거나 같을 때
 			{
-				float Distance = FVector::Dist( Component->GetComponentLocation() , RightController->GetComponentLocation() );
-				if (Distance < MinDistance && Distance <= MinGrabDistance)  // 거리가 최소 거리 조건보다 작거나 같을 때
-				{
-					MinDistance = Distance;
-					ClosestNewEndComponent = Component;
-				}
+				MinDistance = Distance;
+				ClosestNewEndComponent = Component;
 			}
 		}
+	}
 
 	// 가장 가까운 NewEndStaticMesh에 MoveMesh 연결
 	if (ClosestNewEndComponent)
@@ -433,7 +433,7 @@ void AHidePlayer::OnActionTryGrab()
 		}
 	}
 
-	if (ClosestInteractable && GrabbedObject) 
+	if (ClosestInteractable && GrabbedObject)
 	{
 		// 여기서 GrabbedObject와 관련된 추가 작업 수행
 		bIsGrabbed = true;
@@ -491,7 +491,7 @@ void AHidePlayer::OnActionUnGrab()
 			GrabbedObject->SetPhysicsAngularVelocityInRadians( AngularVelocity * ReducedTorquePower , true );
 		}
 	}
-	
+
 	//Grab한 물건을 놓았기 때문에 변수에 nullptr 할당 	
 	bIsGrabbed = false;
 	GrabbedObject = nullptr;
@@ -634,114 +634,35 @@ void AHidePlayer::UpdateTriggerStatus( bool bPressed )
 	}
 }
 
-void AHidePlayer::HiddenPlayer()
+void AHidePlayer::ServerHideMyself_Implementation()
 {
-	// 로컬 플레이어에게만 적용됨 
-	BecomeInvisibleToLocalPlayer();
-
-	// 이후 로직에서 서버에게 이 상태 변경을 알리기
-	Server_SetPlayerHidden( true );
-
+	bIsHidden = false;
+	OnRep_TookInvisibleItem();
 }
 
-void AHidePlayer::Server_SetPlayerHidden_Implementation(bool bNewHidden)
-{
-	if (HasAuthority()) // 서버에서 실행 중인지 확인
-	{
-		bIsHidden = bNewHidden; // 상태를 변경
 
-		if (bIsHidden)
-		{
-			BecomeInvisibleToOtherPlayers(); // 다른 클라이언트에게 플레이어를 '투명'으로 만들기
 
-			// 5초 후에 상태를 복원하기 위한 타이머 설정
-			FTimerHandle TimerHandle;
-			GetWorld()->GetTimerManager().SetTimer( TimerHandle , this , &AHidePlayer::RestoreVisibility , 5.0f , false );
-		}
-	}
-}
-
-bool AHidePlayer::Server_SetPlayerHidden_Validate(bool bNewHidden)
-{
-	return true;
-}
-
-void AHidePlayer::SetPlayerHidden()
+void AHidePlayer::OnRep_TookInvisibleItem()
 {
 	if (IsLocallyControlled())
 	{
-		BecomeInvisibleToLocalPlayer(); // 로컬 변경 
-		Server_SetPlayerHidden( true ); // 서버에 상태 변경을 요청
-	}
-}
+		// 새로운 투명화 머티리얼 찾기
+		UMaterialInterface* InvisibleMaterial1 = LoadObject<UMaterialInterface>( nullptr , TEXT( "/Script/Engine.MaterialInstanceConstant'/Game/JH/Material/MI_MannequinGlow05.MI_MannequinGlow05'" ) );
+		UMaterialInterface* InvisibleMaterial2 = LoadObject<UMaterialInterface>( nullptr , TEXT( "/Script/Engine.MaterialInstanceConstant'/Game/JH/Material/MI_MannequinGlow06.MI_MannequinGlow06'" ) );
 
-void AHidePlayer::RestoreVisibility()
-{
-	if (IsLocallyControlled())
-	{
-		BecomeVisibleToLocalPlayer(); // 로컬 변경
-		Server_SetPlayerHidden( false ); // 서버에 상태 변경을 요청
-	}
-}
-
-void AHidePlayer::OnRep_IsHidden()
-{
-	if (bIsHidden)
-	{
-		BecomeInvisibleToOtherPlayers();
+		// 메시의 모든 섹션에 대해 머티리얼 변경
+		GetMesh()->SetMaterial( 0 , InvisibleMaterial1 );
+		GetMesh()->SetMaterial( 1 , InvisibleMaterial2 );
 	}
 	else
 	{
-		BecomeVisibleToOtherPlayers();
+		GetMesh()->SetVisibility( bIsHidden );
 	}
 }
-void AHidePlayer::BecomeInvisibleToOtherPlayers()
+
+void AHidePlayer::GetLifetimeReplicatedProps( TArray<FLifetimeProperty>& OutLifetimeProps ) const
 {
-	// 액터 전체를 숨김 
-	SetActorHiddenInGame( true );
-
-	// 콜리전 비활성화 
-	SetActorEnableCollision( false );
-}
-
-void AHidePlayer::BecomeVisibleToOtherPlayers()
-{
-	// 액터 전체를 다시 보이게하기
-	SetActorHiddenInGame( false );
-
-	// 콜리전 다시 활성화 
-	SetActorEnableCollision( true );
-}
-
-void AHidePlayer::BecomeInvisibleToLocalPlayer()
-{
-	// 플레이어 메시에 접근
-	UMeshComponent* PlayerMesh = GetMesh();
-
-	// 새로운 투명화 머티리얼 찾기
-	UMaterialInterface* InvisibleMaterial1 = LoadObject<UMaterialInterface>( nullptr , TEXT( "/Script/Engine.MaterialInstanceConstant'/Game/JH/Material/MI_MannequinGlow05.MI_MannequinGlow05'" ) );
-	UMaterialInterface* InvisibleMaterial2 = LoadObject<UMaterialInterface>( nullptr , TEXT( "/Script/Engine.MaterialInstanceConstant'/Game/JH/Material/MI_MannequinGlow06.MI_MannequinGlow06'" ) );
-
-	// 메시의 모든 섹션에 대해 머티리얼 변경
-	PlayerMesh->SetMaterial( 0 , InvisibleMaterial1 );
-	PlayerMesh->SetMaterial( 1 , InvisibleMaterial2 );
-
-	BecomeInvisibleToOtherPlayers();
-}
-
-void AHidePlayer::BecomeVisibleToLocalPlayer()
-{
-	// 메시의 모든 섹션에 대해 원래의 머티리얼로 복원
-	UMeshComponent* PlayerMesh = GetMesh();
-	PlayerMesh->SetMaterial( 0 , OriginalMaterial1 );
-	PlayerMesh->SetMaterial( 1 , OriginalMaterial2 );
-
-	BecomeVisibleToOtherPlayers();
-}
-
-void AHidePlayer::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
-{
-	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	Super::GetLifetimeReplicatedProps( OutLifetimeProps );
 	DOREPLIFETIME( AHidePlayer , bIsHidden );
 }
 

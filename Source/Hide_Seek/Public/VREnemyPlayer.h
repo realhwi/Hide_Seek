@@ -28,8 +28,12 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float moveSpeed;
+
+	void ChangeSpeed();
+
+	UFUNCTION()
+	void RestorePlayerSpeed();
+
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	class USphereComponent* handSphereColl;

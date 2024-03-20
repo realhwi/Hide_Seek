@@ -24,7 +24,7 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-public:	
+public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
@@ -36,36 +36,35 @@ public:
 	//UPROPERTY(EditAnywhere)
 	//float Movespeed = 300;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere , BlueprintReadOnly , Category = Input , meta = (AllowPrivateAccess = "true"))
 	class UInputMappingContext* IMC_JHVRInput;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere , BlueprintReadOnly , Category = Input , meta = (AllowPrivateAccess = "true"))
 	class UInputAction* IA_Move;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere , BlueprintReadOnly , Category = Input , meta = (AllowPrivateAccess = "true"))
 	class UInputAction* IA_Look;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere , BlueprintReadOnly , Category = Input , meta = (AllowPrivateAccess = "true"))
 	class UInputAction* IA_Grab;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere , BlueprintReadOnly , Category = Input , meta = (AllowPrivateAccess = "true"))
 	class UInputAction* IA_Trigger;
-	UPROPERTY( EditAnywhere , BlueprintReadOnly , Category = Input , meta = (AllowPrivateAccess = "true") )
+	UPROPERTY(EditAnywhere , BlueprintReadOnly , Category = Input , meta = (AllowPrivateAccess = "true"))
 	class UInputAction* IA_Run;
-	UPROPERTY( EditAnywhere , BlueprintReadOnly , Category = Input , meta = (AllowPrivateAccess = "true") )
+	UPROPERTY(EditAnywhere , BlueprintReadOnly , Category = Input , meta = (AllowPrivateAccess = "true"))
 	class UInputAction* IA_Crouch;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Settings | Player")
+	UPROPERTY(EditAnywhere , BlueprintReadWrite , Category = "Player Settings | Player")
 	class UCameraComponent* CameraComponent;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Settings | Player")
+	UPROPERTY(EditAnywhere , BlueprintReadWrite , Category = "Player Settings | Player")
 	class UMotionControllerComponent* LeftController;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Settings | Player")
+	UPROPERTY(EditAnywhere , BlueprintReadWrite , Category = "Player Settings | Player")
 	class UMotionControllerComponent* RightController;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Settings | Player")
+	UPROPERTY(EditAnywhere , BlueprintReadWrite , Category = "Player Settings | Player")
 	class UStaticMeshComponent* LeftHandMesh;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Settings | Player")
+	UPROPERTY(EditAnywhere , BlueprintReadWrite , Category = "Player Settings | Player")
 	class UStaticMeshComponent* RightHandMesh;
-
 
 private:
 	UFUNCTION()
@@ -74,36 +73,35 @@ private:
 	UFUNCTION()
 	void Look(const FInputActionValue& Value);
 
-	UPROPERTY( Transient )
+	UPROPERTY(Transient)
 	UPrimitiveComponent* GrabbedComponent; // 현재 잡고 있는 컴포넌트
-	UPROPERTY( Transient )
+	UPROPERTY(Transient)
 	UMaterialInterface* OriginalMaterial1;
-	UPROPERTY( Transient )
+	UPROPERTY(Transient)
 	UMaterialInterface* OriginalMaterial2;
 
 public:
-
 	// 상호작용 액터
 	// Trigger와 Grab 상태 확인
-	UFUNCTION( BlueprintCallable , Category = "Interaction" )
+	UFUNCTION(BlueprintCallable , Category = "Interaction")
 	bool IsTrigger() const;
 
-	UFUNCTION( BlueprintCallable , Category = "Interaction" )
+	UFUNCTION(BlueprintCallable , Category = "Interaction")
 	bool IsGrab() const;
 
-	void OnTriggerInteract( AInteraction* InteractionActor );
-	void OnGrabInteract( AInteraction* InteractionActor );
+	void OnTriggerInteract(AInteraction* InteractionActor);
+	void OnGrabInteract(AInteraction* InteractionActor);
 
 	//Grab Overlap 할때 사용하는 Grab 범위 또는 Overlap Sphere 크기
-	UPROPERTY(EditAnywhere, Category = "Grab", meta = (AllowPrivateAccess = true))
+	UPROPERTY(EditAnywhere , Category = "Grab" , meta = (AllowPrivateAccess = true))
 	float GrabRange = 50;
 
 	//Grab Input 버튼 누를때 실행됨
-	UFUNCTION( BlueprintCallable, Category = "Interaction" )
+	UFUNCTION(BlueprintCallable , Category = "Interaction")
 	void OnActionTryGrab();
 
 	//Grab Input 버튼 땔때 실행됨 
-	UFUNCTION( BlueprintCallable, Category = "Interaction" )
+	UFUNCTION(BlueprintCallable , Category = "Interaction")
 	void OnActionUnGrab();
 
 	//Tick에서 실행됨
@@ -114,14 +112,14 @@ public:
 	bool bIsGrabbed = false;
 	bool bIsSecondGrabAttempted = false;
 
-	UPROPERTY( EditAnywhere , BlueprintReadWrite )
+	UPROPERTY(EditAnywhere , BlueprintReadWrite)
 	ACable* CableActor = nullptr;
 
 	//Trigger Input 버튼 누를때 실행됨
 	UFUNCTION(BlueprintCallable)
 	void OnActionTrigger();
 	// bIsTriggered가 True이면 프레임마다 호출됨
-	bool bIsTrigger=false;
+	bool bIsTrigger = false;
 
 	//Trigger Input 버튼 땔때 실행됨 
 	UFUNCTION()
@@ -132,26 +130,26 @@ public:
 	void PerformLineTrace();
 
 	UFUNCTION()
-	void OnIACrouch( const FInputActionValue& Value );
+	void OnIACrouch(const FInputActionValue& Value);
 
 	UFUNCTION()
-	void OnIAUnCrouch( const FInputActionValue& Value );
+	void OnIAUnCrouch(const FInputActionValue& Value);
 
 	UFUNCTION()
 	void CheckOverlapWithNewEndStaticMesh();
 
 	UFUNCTION()
-	void AttemptToGrabCable( const TArray<FOverlapResult>& OverlapResults );
+	void AttemptToGrabCable(const TArray<FOverlapResult>& OverlapResults);
 
 	// 쑤그리기 
-	UPROPERTY( EditAnywhere , BlueprintReadWrite )
+	UPROPERTY(EditAnywhere , BlueprintReadWrite)
 	bool isCrouched;
 
 	UFUNCTION()
-	void ONIARun( const FInputActionValue& Value );
+	void ONIARun(const FInputActionValue& Value);
 
 	UFUNCTION()
-	void ONIAUnRun( const FInputActionValue& Value );
+	void ONIAUnRun(const FInputActionValue& Value);
 
 	UFUNCTION()
 	void UpdateMovementSpeed();
@@ -159,10 +157,9 @@ public:
 	bool bIsRun = false;
 
 public:
-
 	/*인터렉션 관련 기능들*/
 	//Grab된 물건의 Component
-	UPROPERTY( EditAnywhere, BlueprintReadWrite )
+	UPROPERTY(EditAnywhere , BlueprintReadWrite)
 	class UPrimitiveComponent* GrabbedObject;
 
 	UFUNCTION()
@@ -173,7 +170,7 @@ public:
 	FVector PreviousGrabLocation;
 
 	//던질때 힘
-	UPROPERTY(EditAnywhere, Category = "Grab", meta = (AllowPrivateAccess = true))
+	UPROPERTY(EditAnywhere , Category = "Grab" , meta = (AllowPrivateAccess = true))
 	float ThrowStrength;
 
 	//Grab위치를 실시간으로 업데이트 해야하기 때문에 여기다가 저장함
@@ -182,99 +179,81 @@ public:
 	FQuat PreviousGrabRotation;
 	//회전 변화량
 	FQuat DeltaRotation;
-	
+
 
 	//회전 힘
-	UPROPERTY(EditAnywhere, Category = "Grab", meta = (AllowPrivateAccess = true))
+	UPROPERTY(EditAnywhere , Category = "Grab" , meta = (AllowPrivateAccess = true))
 	float TorquePower = 10;
 
 	// Player Enemy Overlap GameOver Event
 	UFUNCTION()
-	void OnOverlapBegin( UPrimitiveComponent* OverlappedComp , AActor* OtherActor , UPrimitiveComponent* OtherComp , int32 OtherBodyIndex , bool bFromSweep , const FHitResult& SweepResult );
+	void OnOverlapBegin(UPrimitiveComponent* OverlappedComp , AActor* OtherActor , UPrimitiveComponent* OtherComp ,
+	                    int32 OtherBodyIndex , bool bFromSweep , const FHitResult& SweepResult);
 	UFUNCTION()
-	virtual void OnOverlapEnd( UPrimitiveComponent* OverlappedComp , AActor* OtherActor , UPrimitiveComponent* OtherComp , int32 OtherBodyIndex );
+	virtual void OnOverlapEnd(UPrimitiveComponent* OverlappedComp , AActor* OtherActor ,
+	                          UPrimitiveComponent* OtherComp , int32 OtherBodyIndex);
 
 
-	UPROPERTY( EditDefaultsOnly , BlueprintReadWrite )
+	UPROPERTY(EditDefaultsOnly , BlueprintReadWrite)
 	class UPlayerUI* playerUI;
 
-	UPROPERTY( EditDefaultsOnly , BlueprintReadWrite )
+	UPROPERTY(EditDefaultsOnly , BlueprintReadWrite)
 	TSubclassOf<class UPlayerUI> playerUIFactory;
 
-	UPROPERTY( VisibleAnywhere , BlueprintReadOnly , Category = "Components" )
+	UPROPERTY(VisibleAnywhere , BlueprintReadOnly , Category = "Components")
 	UWidgetComponent* playerWidgetComponent;
 
-	UPROPERTY( EditDefaultsOnly )
+	UPROPERTY(EditDefaultsOnly)
 	class UGameOver* GameOverUI;
 
-	UPROPERTY( EditDefaultsOnly , BlueprintReadWrite )
+	UPROPERTY(EditDefaultsOnly , BlueprintReadWrite)
 	TSubclassOf<class UGameOver> GameOverUIFactory;
 
 	// 생명 최대 값 
-	UPROPERTY( EditDefaultsOnly )
+	UPROPERTY(EditDefaultsOnly)
 	int32 maxLifeCount = 4;
 
 	// 1부터 시작해서 max까지
-	UPROPERTY( BlueprintReadWrite , Category = "Player" )
-	int32 LifeCount = maxLifeCount-1;
+	UPROPERTY(BlueprintReadWrite , Category = "Player")
+	int32 LifeCount = maxLifeCount - 1;
 
 	UFUNCTION()
 	void IncreaseLife();
 
-	UFUNCTION()
-	void HiddenPlayer();
+	
 
 	// 충돌 확인 
-	UPROPERTY( EditAnywhere )
+	UPROPERTY(EditAnywhere)
 	class UParticleSystem* VFX;
 
 	// Die 
-	UFUNCTION( BlueprintCallable , Category = "Player" )
+	UFUNCTION(BlueprintCallable , Category = "Player")
 	void OnLifeDepleted();
 
 	UFUNCTION()
 	bool LifeRemove();
 
 	// 생명 하나 감소, 이게 true가되면 텔레포트 하기
-	UPROPERTY( EditDefaultsOnly,BlueprintReadWrite )
+	UPROPERTY(EditDefaultsOnly , BlueprintReadWrite)
 	bool bLifeRemove = false;
 
 	// 인터렉션 실행 감지
 	UPROPERTY(EditAnywhere)
 	bool bHasInteracted = false;
 
-	void UpdateTriggerStatus( bool bPressed );
+	void UpdateTriggerStatus(bool bPressed);
 
 	// 네트워크 -----------------------------------------------------
 	// 클라이언트에서 실행할 RPC 구현 
-	UPROPERTY( ReplicatedUsing = OnRep_IsHidden )
+
+	UFUNCTION(Server, Reliable)
+	void ServerHideMyself();
+
+	UPROPERTY(ReplicatedUsing= OnRep_TookInvisibleItem)
 	bool bIsHidden;
 
-	// 클라이언트가 서버에 Hidden 상태 변경을 요청
-	UFUNCTION( Server , Reliable , WithValidation )
-	void Server_SetPlayerHidden( bool bNewHidden );
-
-	// 클라이언트에서 실행되는 Hidden 상태를 설정
 	UFUNCTION()
-	void SetPlayerHidden();
+	void OnRep_TookInvisibleItem();
 
-	// 클라이언트에서 실행되는 Hidden 상태를 해제
-	UFUNCTION()
-	void RestoreVisibility();
-
-	// 서버에서 상태 변경 후 복제된 경우 호출
-	UFUNCTION()
-	void OnRep_IsHidden();
-
-	// 머티리얼을 투명하게 변경
-	void BecomeInvisibleToOtherPlayers();
-	// 원래 머티리얼로 되돌리기 
-	void BecomeVisibleToOtherPlayers();
-	// 플레이어 히든
-	void BecomeInvisibleToLocalPlayer();
-	// 히든 종료 
-	void BecomeVisibleToLocalPlayer();
-
-	virtual void GetLifetimeReplicatedProps( TArray< FLifetimeProperty >& OutLifetimeProps ) const override;
-	
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 };
