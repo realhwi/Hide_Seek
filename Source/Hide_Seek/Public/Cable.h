@@ -11,7 +11,8 @@ enum class ConnectionStage : uint8
 {
 	Init ,
 	Mid ,
-	Complete
+	Complete,
+	Final 
 };
 class AHidePlayer;
 
@@ -117,5 +118,8 @@ private:
 
 	int32 ConnectionCompletedCount = 0; // 연결 완료 횟수 추적
 	const int32 TotalCableComponents = 3; // 전체 케이블 컴포넌트 수
+
+	static int32 ApplyMaterialsCallCount;
+	static int32 TotalBlueprintInstances;
 
 };

@@ -7,6 +7,8 @@
 #include "Kismet/GameplayStatics.h"
 
 
+int32 ACable::ApplyMaterialsCallCount = 0;
+int32 ACable::TotalBlueprintInstances = 3;
 // TMap<int32 , bool> ACable::MaterialsAppliedStatus;
 ACable::ACable()
 {
@@ -192,6 +194,22 @@ void ACable::ApplyMaterials()
 	CableComp2->SetMaterial( 0 , Material3 );
 	NewEndMesh2->SetMaterial( 0 , Material3 );
 
+	// ApplyMaterials 호출 횟수 증가
+	ApplyMaterialsCallCount++;
+	UE_LOG( LogTemp , Warning , TEXT( "ApplyMaterials called. Current count: %d" ) , ApplyMaterialsCallCount );
+
+
+	// 모든 인스턴스가 ApplyMaterials를 호출했는지 확인
+	if (ApplyMaterialsCallCount >= TotalBlueprintInstances)
+	{
+		UE_LOG( LogTemp , Warning , TEXT( "All instances have called ApplyMaterials. Executing VFX and setting stage to Final." ) );
+		// VFX 실행
+		ExecuteVFX();
+		// 모든 처리가 끝났다면 상태를 Final로 변경
+		CurrentStage = ConnectionStage::Final;
+		UE_LOG( LogTemp , Warning , TEXT( "Stage is now Final." ) );
+	}
+
 	//// 현재 인스턴스의 Index로 맵을 업데이트
 	//if (!MaterialsAppliedStatus.Contains( Index )) {
 	//	MaterialsAppliedStatus.Add( Index , true );
@@ -271,17 +289,40 @@ void ACable::UpdateStage()
 {
 	if (CurrentStage == ConnectionStage::Init)
 	{
+		UE_LOG( LogTemp , Warning , TEXT( "Stage changing from Init to Mid." ) );
 		CurrentStage = ConnectionStage::Mid;
 	}
 	else if (CurrentStage == ConnectionStage::Mid)
 	{
+		UE_LOG( LogTemp , Warning , TEXT( "Stage changing from Mid to Complete." ) );
 		CurrentStage = ConnectionStage::Complete;
-		ExecuteVFX();
+		UE_LOG( LogTemp , Warning , TEXT( "Stage is now Complete." ) );
 	}
 }
 
 void ACable::ExecuteVFX()
 {
+	if (CurrentStage != ConnectionStage::Complete)
+	{
+		UE_LOG( LogTemp , Warning , TEXT( "ExecuteVFX called, but the current stage is not Complete." ) );
+		return;
+	}
+
+	AHidePlayer* PlayerActor = Cast<AHidePlayer>( UGameplayStatics::GetPlayerCharacter( GetWorld() , 0 ) );
+	if (!PlayerActor)
+	{
+		UE_LOG( LogTemp , Error , TEXT( "Failed to cast to AHidePlayer or get the player character." ) );
+		return;
+	}
+
+	if (!VFX)
+	{
+		UE_LOG( LogTemp , Error , TEXT( "VFX is nullptr." ) );
+		return;
+	}
+
+	/*UE_LOG( LogTemp , Warning , TEXT( "Executing VFX at player location." ) );
+	UGameplayStatics::SpawnEmitterAtLocation( GetWorld() , VFX , PlayerActor->GetActorLocation() );
 	if (CurrentStage == ConnectionStage::Complete)
 	{
 		AHidePlayer* PlayerActor = Cast<AHidePlayer>( UGameplayStatics::GetPlayerCharacter( GetWorld() , 0 ) );
@@ -290,7 +331,7 @@ void ACable::ExecuteVFX()
 			UE_LOG( LogTemp , Warning , TEXT( "VFX" ) );
 			UGameplayStatics::SpawnEmitterAtLocation( GetWorld() , VFX , PlayerActor->GetActorLocation() );
 		}
-	}
+	}*/
 }
 
 void ACable::ResetConnectionStates()

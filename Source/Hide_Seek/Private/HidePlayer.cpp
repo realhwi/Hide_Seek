@@ -719,8 +719,8 @@ void AHidePlayer::BecomeInvisibleToLocalPlayer()
 	UMeshComponent* PlayerMesh = GetMesh();
 
 	// 새로운 투명화 머티리얼 찾기
-	UMaterialInterface* InvisibleMaterial1 = LoadObject<UMaterialInterface>( nullptr , TEXT( "MaterialInstanceConstant'/Game/JH/Material/MI_MannequinGlow05.MI_MannequinGlow05'" ) );
-	UMaterialInterface* InvisibleMaterial2 = LoadObject<UMaterialInterface>( nullptr , TEXT( "MaterialInstanceConstant'/Game/JH/Material/MI_MannequinGlow06.MI_MannequinGlow06'" ) );
+	UMaterialInterface* InvisibleMaterial1 = LoadObject<UMaterialInterface>( nullptr , TEXT( "/Script/Engine.MaterialInstanceConstant'/Game/JH/Material/MI_MannequinGlow05.MI_MannequinGlow05'" ) );
+	UMaterialInterface* InvisibleMaterial2 = LoadObject<UMaterialInterface>( nullptr , TEXT( "/Script/Engine.MaterialInstanceConstant'/Game/JH/Material/MI_MannequinGlow06.MI_MannequinGlow06'" ) );
 
 	// 메시의 모든 섹션에 대해 머티리얼 변경
 	PlayerMesh->SetMaterial( 0 , InvisibleMaterial1 );
