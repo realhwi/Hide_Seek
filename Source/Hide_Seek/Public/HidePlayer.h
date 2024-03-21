@@ -33,9 +33,6 @@ public:
 
 	virtual void OnConstruction(const FTransform& Transform) override;
 
-	//UPROPERTY(EditAnywhere)
-	//float Movespeed = 300;
-
 	UPROPERTY(EditAnywhere , BlueprintReadOnly , Category = Input , meta = (AllowPrivateAccess = "true"))
 	class UInputMappingContext* IMC_JHVRInput;
 
@@ -247,10 +244,10 @@ public:
 	// 클라이언트에서 실행할 RPC 구현 
 
 	UFUNCTION(Server, Reliable)
-	void ServerHideMyself();
+	void ServerChangeVisibility();
 
-	UPROPERTY(ReplicatedUsing= OnRep_TookInvisibleItem)
-	bool bIsHidden;
+	UPROPERTY(ReplicatedUsing = OnRep_TookInvisibleItem, BlueprintReadWrite, EditAnywhere)
+	bool bIsHidden = false;
 
 	UFUNCTION()
 	void OnRep_TookInvisibleItem();
