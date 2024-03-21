@@ -671,6 +671,15 @@ void AHidePlayer::OnRep_TookInvisibleItem()
 		//Visibility 적용해주기
 		GetMesh()->SetVisibility( !bIsHidden );
 	}
+
+	// 타이머 시작
+	GetWorld()->GetTimerManager().SetTimer( VisibilityTimerHandle , this , &AHidePlayer::ResetVisibility , 10.0f , false );
+}
+
+void AHidePlayer::ResetVisibility()
+{
+	bIsHidden = !bIsHidden;
+	OnRep_TookInvisibleItem(); 
 }
 
 void AHidePlayer::GetLifetimeReplicatedProps( TArray<FLifetimeProperty>& OutLifetimeProps ) const

@@ -138,12 +138,19 @@ void AVREnemyPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 
 void AVREnemyPlayer::ChangeSpeed()
 {
-	UE_LOG( LogTemp , Warning , TEXT( "AVREnemyPlayer::ServerChangeSpeed_Implementation." ) );
+	if (HasAuthority())
+	{
+		UE_LOG( LogTemp , Warning , TEXT( "AVREnemyPlayer::ServerChangeSpeed_Implementation." ) );
 
-	GetCharacterMovement()->MaxWalkSpeed = 100;
+		GetCharacterMovement()->MaxWalkSpeed = 200;
 
-	FTimerHandle TimerHandle;
-	GetWorld()->GetTimerManager().SetTimer( TimerHandle , this , &AVREnemyPlayer::RestorePlayerSpeed , 10.0f , false );
+		FTimerHandle TimerHandle;
+		GetWorld()->GetTimerManager().SetTimer( TimerHandle , this , &AVREnemyPlayer::RestorePlayerSpeed , 10.0f , false );
+	}
+	else
+	{
+		ServerChangeSpeed();
+	}
 }
 
 
@@ -287,6 +294,11 @@ void AVREnemyPlayer::ServerRPC_ActionHandDown_Implementation()
 {
 	isHandUP = false;
 	canCheckActor = false;
+}
+
+void AVREnemyPlayer::ServerChangeSpeed_Implementation()
+{
+	ChangeSpeed();
 }
 
 void AVREnemyPlayer::GetLifetimeReplicatedProps( TArray<FLifetimeProperty>& OutLifetimeProps ) const
