@@ -132,14 +132,23 @@ public:
 	UPROPERTY( EditAnywhere, BlueprintReadWrite )
 	float findActorRadius = 150;
 
-	UPROPERTY( EditAnywhere , BlueprintReadWrite )
-	float itemLockTime;
+	//UPROPERTY( EditAnywhere , BlueprintReadWrite )
+	//float itemLockTime;
 
-	UPROPERTY( EditAnywhere , BlueprintReadWrite )
-	float electDuctLockTime;
+	//UPROPERTY( EditAnywhere , BlueprintReadWrite )
+	//float electDuctLockTime;
 
-	UPROPERTY( EditAnywhere , BlueprintReadWrite )
-	float escapeObjLockTime;
+	//UPROPERTY( EditAnywhere , BlueprintReadWrite )
+	//float escapeObjLockTime;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated)
+	bool canItemBoxLock;
+
+	UPROPERTY( EditAnywhere , BlueprintReadWrite , Replicated )
+	bool canElectricBoxLock;
+
+	UPROPERTY( EditAnywhere , BlueprintReadWrite , Replicated )
+	bool canEscapeLock;
 
 	UPROPERTY( EditAnywhere , BlueprintReadWrite, Replicated )
 	bool isHandUP;
@@ -152,6 +161,12 @@ public:
 
 	UFUNCTION( Server , Reliable )
 	void ServerRPC_ActionHandDown();
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated)
+	bool joinEnemyPlayer;
+
+	UFUNCTION(Server,Reliable)
+	void SererRPC_JoinEnemy();
 
 	virtual void GetLifetimeReplicatedProps( TArray<FLifetimeProperty>& OutLifetimeProps ) const override;
 };

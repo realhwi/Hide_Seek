@@ -83,6 +83,8 @@ void AVREnemyPlayer::BeginPlay()
 	GetMesh()->SetScalarParameterValueOnMaterials( TEXT( "Power" ) , 10 );
 
 	bHasController = false;
+
+	// SererRPC_JoinEnemy();
 }
 
 // Called every frame
@@ -110,6 +112,8 @@ void AVREnemyPlayer::Tick(float DeltaTime)
 			}
 		}
 	}
+
+	SererRPC_JoinEnemy();
 
 	FirstSkillActive();
 	SecondSkillActive();
@@ -201,7 +205,7 @@ void AVREnemyPlayer::FirstSkillActive()
 	if (activeSkillTime == 10 && activeFirstSkill == false)
 	{
 		GetMesh()->SetScalarParameterValueOnMaterials( TEXT( "Power" ) , 7 );
-		itemLockTime = 3;
+		// itemLockTime = 3;
 		activeFirstSkill = true;
 	}
 }
@@ -211,8 +215,8 @@ void AVREnemyPlayer::SecondSkillActive()
 	if(activeSkillTime == 20 && activeSecondSkill == false)
 	{
 		GetMesh()->SetScalarParameterValueOnMaterials( TEXT( "Power" ) , 5);
-		itemLockTime = 5;
-		electDuctLockTime = 3;
+		// itemLockTime = 5;
+		// electDuctLockTime = 3;
 		activeSecondSkill = true;
 	}
 }
@@ -222,9 +226,9 @@ void AVREnemyPlayer::ThirdSkillActive()
 	if (activeSkillTime == 30 && activeThirdSkill == false)
 	{
 		GetMesh()->SetScalarParameterValueOnMaterials( TEXT( "Power" ) , 3 );
-		itemLockTime = 8;
-		electDuctLockTime = 5;
-		escapeObjLockTime = 3;
+		// itemLockTime = 8;
+		// electDuctLockTime = 5;
+		// escapeObjLockTime = 3;
 		activeThirdSkill = true;
 	}
 	
@@ -289,6 +293,11 @@ void AVREnemyPlayer::ServerRPC_ActionHandDown_Implementation()
 	canCheckActor = false;
 }
 
+void AVREnemyPlayer::SererRPC_JoinEnemy_Implementation()
+{
+	joinEnemyPlayer = true;
+}
+
 void AVREnemyPlayer::GetLifetimeReplicatedProps( TArray<FLifetimeProperty>& OutLifetimeProps ) const
 {
 	Super::GetLifetimeReplicatedProps( OutLifetimeProps );
@@ -296,4 +305,8 @@ void AVREnemyPlayer::GetLifetimeReplicatedProps( TArray<FLifetimeProperty>& OutL
 	DOREPLIFETIME( AVREnemyPlayer , isHandUP );
 	DOREPLIFETIME( AVREnemyPlayer , canCheckActor );
 	//DOREPLIFETIME( AVREnemyPlayer , countHPChip );
+	DOREPLIFETIME( AVREnemyPlayer , joinEnemyPlayer );
+	DOREPLIFETIME( AVREnemyPlayer , canItemBoxLock );
+	DOREPLIFETIME( AVREnemyPlayer , canElectricBoxLock );
+	DOREPLIFETIME( AVREnemyPlayer , canEscapeLock );
 }
