@@ -95,6 +95,7 @@ AHidePlayer::AHidePlayer()
 
 	CableActor = nullptr; // 초기화
 	bIsGrabbed = true;
+
 }
 
 
@@ -149,6 +150,7 @@ void AHidePlayer::BeginPlay()
 	UMeshComponent* PlayerMesh = GetMesh();
 	OriginalMaterial1 = PlayerMesh->GetMaterial( 0 );
 	OriginalMaterial2 = PlayerMesh->GetMaterial( 1 );
+
 }
 
 // Called every frame
@@ -171,6 +173,7 @@ void AHidePlayer::Tick( float DeltaTime )
 		FRotator ControllerRotation = RightController->GetComponentRotation();
 		UE_LOG( LogTemp , Warning , TEXT( "RightController Location: %s, Rotation: %s" ) , *ControllerLocation.ToString() , *ControllerRotation.ToString() );
 	}
+	
 }
 
 // Called to bind functionality to input
@@ -634,16 +637,24 @@ void AHidePlayer::UpdateTriggerStatus( bool bPressed )
 	}
 }
 
-void AHidePlayer::ServerHideMyself_Implementation()
+//자동으로 자신의 Mesh 상태를 받아와서 Visibility를 반대로 해준다
+//Visibility 켜줄때도 이거 사용하면 됨
+void AHidePlayer::ServerChangeVisibility_Implementation()
 {
-	bIsHidden = false;
+	//bool 변수 뒤집기 -> true면 false, false면 true
+	bIsHidden = !bIsHidden;
+
+	FString Message = FString::Printf(TEXT("%s"), bIsHidden ? TEXT("AHidePlayer::ServerChangeVisibility_Implementation - Server - bIsHidden" : TEXT("AHidePlayer::ServerChangeVisibility_Implementation - Server - !bIsHidden")));
+	GEngine->AddOnScreenDebugMessage(-1, 40, FColor::White,Message );
+	
+	//서버에서 강제로 자기 자신한테 OnRep 호출해주기
 	OnRep_TookInvisibleItem();
 }
 
-
-
+//Server에서 bIsHidden을 바꿔주면 자동으로 Client 쪽에서 호출됨
 void AHidePlayer::OnRep_TookInvisibleItem()
 {
+	//로컬의 나면
 	if (IsLocallyControlled())
 	{
 		// 새로운 투명화 머티리얼 찾기
@@ -654,9 +665,11 @@ void AHidePlayer::OnRep_TookInvisibleItem()
 		GetMesh()->SetMaterial( 0 , InvisibleMaterial1 );
 		GetMesh()->SetMaterial( 1 , InvisibleMaterial2 );
 	}
+	//로컬의 내가 아니면; 다른 클라이언트 월드의 나면
 	else
 	{
-		GetMesh()->SetVisibility( bIsHidden );
+		//Visibility 적용해주기
+		GetMesh()->SetVisibility( !bIsHidden );
 	}
 }
 
