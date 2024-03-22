@@ -171,7 +171,7 @@ void AHidePlayer::Tick( float DeltaTime )
 	{
 		FVector ControllerLocation = RightController->GetComponentLocation();
 		FRotator ControllerRotation = RightController->GetComponentRotation();
-		UE_LOG( LogTemp , Warning , TEXT( "RightController Location: %s, Rotation: %s" ) , *ControllerLocation.ToString() , *ControllerRotation.ToString() );
+		//UE_LOG( LogTemp , Warning , TEXT( "RightController Location: %s, Rotation: %s" ) , *ControllerLocation.ToString() , *ControllerRotation.ToString() );
 	}
 	
 }
@@ -248,7 +248,7 @@ void AHidePlayer::OnIACrouch( const FInputActionValue& Value )
 {
 	GetCharacterMovement()->Crouch();
 	isCrouched = true;
-	UE_LOG( LogTemp , Warning , TEXT( "Crouch Action Triggered: %s" ) , Value.Get<bool>() ? TEXT( "True" ) : TEXT( "False" ) );
+	//UE_LOG( LogTemp , Warning , TEXT( "Crouch Action Triggered: %s" ) , Value.Get<bool>() ? TEXT( "True" ) : TEXT( "False" ) );
 }
 
 void AHidePlayer::OnIAUnCrouch( const FInputActionValue& Value )
@@ -260,7 +260,7 @@ void AHidePlayer::OnIAUnCrouch( const FInputActionValue& Value )
 
 void AHidePlayer::ONIARun( const FInputActionValue& Value )
 {
-	UE_LOG( LogTemp , Warning , TEXT( "Crouch Action Triggered: %s" ) , Value.Get<bool>() ? TEXT( "True" ) : TEXT( "False" ) );
+	//UE_LOG( LogTemp , Warning , TEXT( "Crouch Action Triggered: %s" ) , Value.Get<bool>() ? TEXT( "True" ) : TEXT( "False" ) );
 	bIsRun = true;
 }
 
@@ -310,7 +310,7 @@ void AHidePlayer::OnGrabInteract( AInteraction* InteractionActor )
 const float MinGrabDistance = 15.0f;
 void AHidePlayer::CheckOverlapWithNewEndStaticMesh()
 {
-	UE_LOG( LogTemp , Warning , TEXT( "CheckOverlapWithNewEndStaticMesh called. bIsGrabbed: %s, CableActor: %s" ) , bIsGrabbed ? TEXT( "true" ) : TEXT( "false" ) , CableActor ? *CableActor->GetName() : TEXT( "nullptr" ) );
+	//UE_LOG( LogTemp , Warning , TEXT( "CheckOverlapWithNewEndStaticMesh called. bIsGrabbed: %s, CableActor: %s" ) , bIsGrabbed ? TEXT( "true" ) : TEXT( "false" ) , CableActor ? *CableActor->GetName() : TEXT( "nullptr" ) );
 	if (!bIsSecondGrabAttempted || !CableActor) return;
 
 	// 가장 가까운 NewEnd 컴포넌트와 그 거리를 저장할 변수들
@@ -336,7 +336,7 @@ void AHidePlayer::CheckOverlapWithNewEndStaticMesh()
 	if (ClosestNewEndComponent)
 	{
 		CableActor->HandleCableReleased( ClosestNewEndComponent ); // 여기서 HandleCableReleased 함수는 인자로 받은 NewEnd 컴포넌트를 처리하도록 수정되어야 함
-		UE_LOG( LogTemp , Warning , TEXT( "Cable end attached to the closest new end mesh." ) );
+		//UE_LOG( LogTemp , Warning , TEXT( "Cable end attached to the closest new end mesh." ) );
 		bIsGrabbed = false;
 		bIsSecondGrabAttempted = false;
 	}
@@ -377,7 +377,7 @@ void AHidePlayer::AttemptToGrabCable( const TArray<FOverlapResult>& OverlapResul
 		if (OverlappedCable)
 		{
 			OverlappedCable->HandleCableGrabbed( RightController , ClosestComponent );
-			UE_LOG( LogTemp , Warning , TEXT( "Cable MoveMesh attached to RightController." ) );
+			//UE_LOG( LogTemp , Warning , TEXT( "Cable MoveMesh attached to RightController." ) );
 
 			CableActor = OverlappedCable; // CableActor 할당
 			bIsGrabbed = true;
@@ -390,12 +390,12 @@ void AHidePlayer::AttemptToGrabCable( const TArray<FOverlapResult>& OverlapResul
 
 void AHidePlayer::OnActionTryGrab()
 {
-	UE_LOG( LogTemp , Warning , TEXT( "Grab" ) );
+	//UE_LOG( LogTemp , Warning , TEXT( "Grab" ) );
 
 	// RightController Null 체크
 	if (!RightController)
 	{
-		UE_LOG( LogTemp , Warning , TEXT( "RightController is null." ) );
+		//UE_LOG( LogTemp , Warning , TEXT( "RightController is null." ) );
 		return; // RightController가 null이면 여기서 함수 실행을 중단
 	}
 
@@ -416,7 +416,7 @@ void AHidePlayer::OnActionTryGrab()
 	//Overlap 결과가 없다면 밑에 코드 접근 불가
 	if (!bIsHit)
 	{
-		UE_LOG( LogTemp , Warning , TEXT( "No object found to grab" ) );
+		//UE_LOG( LogTemp , Warning , TEXT( "No object found to grab" ) );
 		return;
 	}
 
@@ -455,7 +455,7 @@ void AHidePlayer::OnActionTryGrab()
 
 	if (bIsGrabbed && !bIsSecondGrabAttempted)
 	{
-		UE_LOG( LogTemp , Warning , TEXT( "Second grab attempt detected." ) );
+		//UE_LOG( LogTemp , Warning , TEXT( "Second grab attempt detected." ) );
 		bIsSecondGrabAttempted = true;
 		CheckOverlapWithNewEndStaticMesh();
 	}
@@ -563,7 +563,7 @@ void AHidePlayer::OnOverlapBegin( UPrimitiveComponent* OverlappedComp , AActor* 
 {
 	if (OtherActor != nullptr && OtherActor != this && OtherActor->IsA( AVREnemyPlayer::StaticClass() ))
 	{
-		UE_LOG( LogTemp , Warning , TEXT( "Overlapped!!" ) );
+		//UE_LOG( LogTemp , Warning , TEXT( "Overlapped!!" ) );
 		// count가 0 이하라면 함수 종료 
 		if (LifeCount <= 0)
 		{
@@ -690,7 +690,7 @@ void AHidePlayer::GetLifetimeReplicatedProps( TArray<FLifetimeProperty>& OutLife
 
 void AHidePlayer::OnActionTrigger()
 {
-	UE_LOG( LogTemp , Warning , TEXT( "Trigger" ) );
+	//UE_LOG( LogTemp , Warning , TEXT( "Trigger" ) );
 
 	bIsTrigger = true;
 	/*bIsTriggerPressed =true;*/
@@ -699,7 +699,7 @@ void AHidePlayer::OnActionTrigger()
 
 void AHidePlayer::OnActionUnTrigger()
 {
-	UE_LOG( LogTemp , Warning , TEXT( "UnTrigger" ) );
+	//UE_LOG( LogTemp , Warning , TEXT( "UnTrigger" ) );
 
 	bIsTrigger = false;
 	//bIsTriggerPressed = false;

@@ -23,7 +23,7 @@ protected:
 
 public:	
 
-	TArray<class ACable*> CompletedCables;
+	TArray<class ACable*> Cables;
 
 	void CheckAllMaterialsApplied();
 

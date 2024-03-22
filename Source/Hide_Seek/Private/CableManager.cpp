@@ -3,6 +3,10 @@
 
 #include "CableManager.h"
 
+#include "Cable.h"
+#include "EngineUtils.h"
+#include "Kismet/GameplayStatics.h"
+
 // Sets default values
 ACableManager::ACableManager()
 {
@@ -15,14 +19,27 @@ ACableManager::ACableManager()
 void ACableManager::BeginPlay()
 {
 	Super::BeginPlay();
+
+    for (TActorIterator<ACable> It( GetWorld() , ACable::StaticClass() ); It; ++It)
+    {
+        ACable* Actor = *It;
+        Cables.Add( Actor );
+    }
 	
 }
 
 void ACableManager::CheckAllMaterialsApplied()
 {
-    if (CompletedCables.Num() == 3)
+    for (auto cable : Cables)
     {
-        OnMaterialsApplied.Broadcast();
+	   if (false == cable->bApplyMaterial)
+	   {
+			// 실패
+		   return;
+	   }
     }
+    UE_LOG( LogTemp , Warning , TEXT( "CheckAllMaterialsApplied" ) );
+
+    // 모든 케이블의 색이 바뀜
 }
 
