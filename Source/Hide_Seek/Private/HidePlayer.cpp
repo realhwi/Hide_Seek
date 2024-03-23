@@ -695,4 +695,3 @@ void AHidePlayer::OnActionUnTrigger()
 	bIsTrigger = false;
 	//bIsTriggerPressed = false;
 }
-

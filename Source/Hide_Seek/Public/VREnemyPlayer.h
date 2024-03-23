@@ -82,6 +82,7 @@ private:
 	void EInteractionComplete(const FInputActionValue& value);
 
 	bool bHasController = false;
+
 	//UPROPERTY()
 	//class UEnhancedInputComponent* InputComponents;
 
@@ -95,7 +96,6 @@ public:
 	UFUNCTION()
 	void ThirdSkillActive();
 
-public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float activeSkillTime;
 
@@ -111,7 +111,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool activeThirdSkill;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated)
 	int32 countHPChip;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
@@ -120,40 +120,31 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	class AHidePlayer* playerChar;
 
-	UPROPERTY( EditAnywhere , BlueprintReadWrite )
-	class AActor* door;
-
-	UPROPERTY( EditAnywhere , BlueprintReadWrite )
-	class AActor* itemBox;
-
-	UPROPERTY( EditAnywhere , BlueprintReadWrite )
-	class AActor* enemyAltar;
-
 	UPROPERTY( EditAnywhere, BlueprintReadWrite )
 	float findActorRadius = 150;
-
-	//UPROPERTY( EditAnywhere , BlueprintReadWrite )
-	//float itemLockTime;
-
-	//UPROPERTY( EditAnywhere , BlueprintReadWrite )
-	//float electDuctLockTime;
-
-	//UPROPERTY( EditAnywhere , BlueprintReadWrite )
-	//float escapeObjLockTime;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated)
 	bool canItemBoxLock;
 
+	UFUNCTION( Server , Reliable )
+	void ServerRPC_ItemBoxLock();
+
 	UPROPERTY( EditAnywhere , BlueprintReadWrite , Replicated )
 	bool canElectricBoxLock;
+
+	UFUNCTION( Server , Reliable )
+	void ServerRPC_ElectricBoxLock();
 
 	UPROPERTY( EditAnywhere , BlueprintReadWrite , Replicated )
 	bool canEscapeLock;
 
+	UFUNCTION( Server , Reliable )
+	void ServerRPC_EscapeLock();
+
 	UPROPERTY( EditAnywhere , BlueprintReadWrite, Replicated )
 	bool isHandUP;
 
-	UPROPERTY( EditAnywhere , BlueprintReadWrite, Replicated )
+	UPROPERTY( EditAnywhere , BlueprintReadWrite, Replicated)
 	bool canCheckActor;
 
 	UFUNCTION(Server, Reliable)
@@ -162,11 +153,26 @@ public:
 	UFUNCTION( Server , Reliable )
 	void ServerRPC_ActionHandDown();
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated)
-	bool joinEnemyPlayer;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	class AVRGameStateBase* vrGameStateBase;
 
-	UFUNCTION(Server,Reliable)
-	void SererRPC_JoinEnemy();
+	UPROPERTY( EditAnywhere , BlueprintReadWrite, Replicated)
+	bool isAltarActivate;
+
+	UPROPERTY( EditAnywhere , BlueprintReadWrite , Replicated )
+	bool isEnemyWin = false;
+
+	UPROPERTY( EditAnywhere , BlueprintReadWrite , Replicated )
+	bool isEnemyLose = false;
+
+	//UFUNCTION( Server , Reliable )
+	//void ServerRPC_EnemyPlayerWin();
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated)
+	bool isPraying;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int32 setAltarOnChip = 0;
 
 	virtual void GetLifetimeReplicatedProps( TArray<FLifetimeProperty>& OutLifetimeProps ) const override;
 };

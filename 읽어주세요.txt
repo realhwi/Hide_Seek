@@ -1,0 +1,32 @@
+VREnemyPlayer.cpp
+
+========## Player ## ============
+
+Enemy 승리 == bool isEnemyWin;
+Enemy 패배 == bool isEnemyLose;
+
+=================================
+
+
+=========## Map ## ==============
+
+아이템 박스 잠금 스킬 	== bool canItemBoxLock;
+전원 공급장치 잠금 스킬 == bool canElectricBoxLock;
+탈출장치 잠금 스킬		== bool canEscapeLock;
+
+=================================
+
+Lobby 	== LobbyMap
+			GameModeBase == BP_VRLobbyGMB
+		 
+Session	== TestMap
+			GameModeBase == BP_VRLobbyGMB
+			
+InGame 	== MainMap
+			GameModeBase == BP_TESTSPawnGMB
+			
+===================================
+
+Batch File 주소 설정
+"C:\Program Files\Epic Games\UE_5.3\Engine\Binaries\Win64\UnrealEditor.exe" "D:\Project_Git\Hide_Seek\Hide_Seek.uproject" -game -ResX=640 -ResY=480 -WinX=200 -WinY=300 -log
+																				^ 이 부분을 수정 ^

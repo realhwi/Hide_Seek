@@ -7,6 +7,7 @@
 #include "EnhancedInputSubsystems.h"
 #include "HeadMountedDisplayFunctionLibrary.h"
 #include "MotionControllerComponent.h"
+#include "VRGameStateBase.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SphereComponent.h"
@@ -63,7 +64,7 @@ AVREnemyPlayer::AVREnemyPlayer()
 	handSphereColl = CreateDefaultSubobject<USphereComponent>( TEXT( "HandSphereColl" ) );
 	handSphereColl->SetupAttachment( GetMesh() );
 	handSphereColl->AttachToComponent( GetMesh() , FAttachmentTransformRules::SnapToTargetIncludingScale , TEXT( "EnemyRHPoint" ) );
-	handSphereColl->SetRelativeLocation( FVector( -10 , 0 , 0 ) );
+	// handSphereColl->SetRelativeLocation( FVector( -10 , 0 , 0 ) );
 	handSphereColl->SetSphereRadius( 10.f );
 	handSphereColl->ComponentTags.Add( FName( "EnemyHand" ) );
 
@@ -75,16 +76,18 @@ void AVREnemyPlayer::BeginPlay()
 {
 	Super::BeginPlay();
 
-	UHeadMountedDisplayFunctionLibrary::SetTrackingOrigin(EHMDTrackingOrigin::Floor);
+	UHeadMountedDisplayFunctionLibrary::SetTrackingOrigin(EHMDTrackingOrigin::Eye);
 
 	//UE_LOG( LogTemp , Warning , TEXT( "beginplay" ) )
 
+	handSphereColl->SetRelativeLocation( FVector( -10 , 0 , 0 ) );
 
 	GetMesh()->SetScalarParameterValueOnMaterials( TEXT( "Power" ) , 10 );
 
+	vrGameStateBase = Cast<AVRGameStateBase>( GetWorld()->GetGameState() );
+
 	bHasController = false;
 
-	// SererRPC_JoinEnemy();
 }
 
 // Called every frame
@@ -112,14 +115,11 @@ void AVREnemyPlayer::Tick(float DeltaTime)
 			}
 		}
 	}
-
-	SererRPC_JoinEnemy();
-
 	FirstSkillActive();
 	SecondSkillActive();
 	ThirdSkillActive();
 
-
+	// ServerRPC_EnemyPlayerWin();
 }
 
 // Called to bind functionality to input
@@ -170,11 +170,6 @@ void AVREnemyPlayer::EnemyMove(const FInputActionValue& value)
 	FVector movementDirection = ForwardVector * movementVector.Y + RightVector * movementVector.X;
 
 	AddMovementInput( movementDirection , 25.0f );
-
-	//AddMovementInput(cameraComp->GetForwardVector(), movementVector.Y);
-	//AddMovementInput(cameraComp->GetRightVector(), movementVector.X);
-
-	// UE_LOG(LogTemp, Warning, TEXT("EnemyMove %s"), *value.ToString())
 }
 
 void AVREnemyPlayer::EnemyLook(const FInputActionValue& value)
@@ -185,8 +180,6 @@ void AVREnemyPlayer::EnemyLook(const FInputActionValue& value)
 	{
 		AddControllerYawInput(lookVector.X);
 		AddControllerPitchInput(-lookVector.Y);
-
-		// UE_LOG( LogTemp , Warning , TEXT( "EnemyLook %s" ) , *value.ToString() )
 	}
 }
 
@@ -202,33 +195,30 @@ void AVREnemyPlayer::EInteractionComplete(const FInputActionValue& value)
 
 void AVREnemyPlayer::FirstSkillActive()
 {
-	if (activeSkillTime == 10 && activeFirstSkill == false)
+	if (activeSkillTime == 60 && activeFirstSkill == false)
 	{
 		GetMesh()->SetScalarParameterValueOnMaterials( TEXT( "Power" ) , 7 );
-		// itemLockTime = 3;
+		ServerRPC_ItemBoxLock();
 		activeFirstSkill = true;
 	}
 }
 
 void AVREnemyPlayer::SecondSkillActive()
 {
-	if(activeSkillTime == 20 && activeSecondSkill == false)
+	if(activeSkillTime == 120 && activeSecondSkill == false)
 	{
 		GetMesh()->SetScalarParameterValueOnMaterials( TEXT( "Power" ) , 5);
-		// itemLockTime = 5;
-		// electDuctLockTime = 3;
+		ServerRPC_ElectricBoxLock();
 		activeSecondSkill = true;
 	}
 }
 
 void AVREnemyPlayer::ThirdSkillActive()
 {
-	if (activeSkillTime == 30 && activeThirdSkill == false)
+	if (activeSkillTime == 180 && activeThirdSkill == false)
 	{
 		GetMesh()->SetScalarParameterValueOnMaterials( TEXT( "Power" ) , 3 );
-		// itemLockTime = 8;
-		// electDuctLockTime = 5;
-		// escapeObjLockTime = 3;
+		ServerRPC_EscapeLock();
 		activeThirdSkill = true;
 	}
 	
@@ -293,20 +283,48 @@ void AVREnemyPlayer::ServerRPC_ActionHandDown_Implementation()
 	canCheckActor = false;
 }
 
-void AVREnemyPlayer::SererRPC_JoinEnemy_Implementation()
+
+void AVREnemyPlayer::ServerRPC_ItemBoxLock_Implementation()
 {
-	joinEnemyPlayer = true;
+	canItemBoxLock = true;
 }
+
+void AVREnemyPlayer::ServerRPC_ElectricBoxLock_Implementation()
+{
+	canElectricBoxLock = true;
+}
+
+void AVREnemyPlayer::ServerRPC_EscapeLock_Implementation()
+{
+	canEscapeLock = true;
+}
+
+//void AVREnemyPlayer::ServerRPC_EnemyPlayerWin_Implementation()
+//{
+//	// auto vrGameStateBase = Cast<AVRGameStateBase>(GetWorld()->GetGameState());
+//
+//	if(setAltarOnChip >= 1)
+//	{
+//		isAltarActivate = true;
+//	}
+//
+//	if (vrGameStateBase->isTimeOut == true)
+//	{
+//		isEnemyWin = true;
+//	}
+//}
 
 void AVREnemyPlayer::GetLifetimeReplicatedProps( TArray<FLifetimeProperty>& OutLifetimeProps ) const
 {
 	Super::GetLifetimeReplicatedProps( OutLifetimeProps );
 
-	DOREPLIFETIME( AVREnemyPlayer , isHandUP );
-	DOREPLIFETIME( AVREnemyPlayer , canCheckActor );
-	//DOREPLIFETIME( AVREnemyPlayer , countHPChip );
-	DOREPLIFETIME( AVREnemyPlayer , joinEnemyPlayer );
-	DOREPLIFETIME( AVREnemyPlayer , canItemBoxLock );
-	DOREPLIFETIME( AVREnemyPlayer , canElectricBoxLock );
-	DOREPLIFETIME( AVREnemyPlayer , canEscapeLock );
+	DOREPLIFETIME( AVREnemyPlayer , isHandUP )
+	DOREPLIFETIME( AVREnemyPlayer , canCheckActor )
+	DOREPLIFETIME( AVREnemyPlayer , countHPChip )
+	DOREPLIFETIME( AVREnemyPlayer , canItemBoxLock )
+	DOREPLIFETIME( AVREnemyPlayer , canElectricBoxLock )
+	DOREPLIFETIME( AVREnemyPlayer , canEscapeLock )
+	DOREPLIFETIME( AVREnemyPlayer , isAltarActivate )
+	DOREPLIFETIME( AVREnemyPlayer , isPraying )
+	DOREPLIFETIME( AVREnemyPlayer , isEnemyLose )
 }

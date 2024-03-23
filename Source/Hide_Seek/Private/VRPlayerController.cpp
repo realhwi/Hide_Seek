@@ -9,11 +9,6 @@ void AVRPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
 
-
-
-
-
-
 	if (GEngine && GEngine->StereoRenderingDevice)
 	{
 		GEngine->StereoRenderingDevice->EnableStereo(true);
@@ -24,7 +19,6 @@ void AVRPlayerController::BeginPlay()
 void AVRPlayerController::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
-
 
 	//if (UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayConnected())
 	//{

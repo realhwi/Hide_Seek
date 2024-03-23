@@ -46,7 +46,7 @@ void ASpeedItem::OnOverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor
 		if (AVREnemyPlayer* VREnemyPlayer = Cast<AVREnemyPlayer>( UGameplayStatics::GetPlayerCharacter( GetWorld() , 0 ) ))
 		{
 
-			if(HasAuthority())
+			if(!HasAuthority())
 			{
 				VREnemyPlayer->ChangeSpeed();
 			}
