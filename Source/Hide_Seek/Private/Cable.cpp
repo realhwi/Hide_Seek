@@ -80,7 +80,7 @@ void ACable::BeginPlay()
 	InitialMoveMesh2Rotation = MoveMesh2->GetComponentRotation();
 
 
-	Manager = Cast<ACableManager>( UGameplayStatics::GetActorOfClass( GetWorld() , ACableManager::StaticClass() ) );
+	//Manager = Cast<ACableManager>( UGameplayStatics::GetActorOfClass( GetWorld() , ACableManager::StaticClass() ) );
 }
 
 void ACable::HandleCableGrabbed( UPrimitiveComponent* RightController , UPrimitiveComponent* ComponentToAttach )
@@ -182,7 +182,9 @@ void ACable::ApplyMaterials()
 	NewEndMesh2->SetMaterial( 0 , Material3 );
 
 	bApplyMaterial = true;
-	Manager->CheckAllMaterialsApplied( );
+	UE_LOG( LogTemp , Warning , TEXT( "bApplyMaterial=true" ) );
+
+	//Manager->CheckAllMaterialsApplied( );
 }
 
 void ACable::ResetToInitialPositions()

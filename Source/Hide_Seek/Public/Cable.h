@@ -102,6 +102,7 @@ private:
 	const int32 TotalCableComponents = 3; // 전체 케이블 컴포넌트 수
 
 public:
+	UPROPERTY()
 	bool bApplyMaterial;
 
 	UPROPERTY()

@@ -48,6 +48,8 @@ public:
 	class UInputAction* IA_Run;
 	UPROPERTY(EditAnywhere , BlueprintReadOnly , Category = Input , meta = (AllowPrivateAccess = "true"))
 	class UInputAction* IA_Crouch;
+	UPROPERTY( EditAnywhere , BlueprintReadOnly , Category = Input , meta = (AllowPrivateAccess = "true") )
+	class UInputAction* IA_UI_Interaction;
 
 	UPROPERTY(EditAnywhere , BlueprintReadWrite , Category = "Player Settings | Player")
 	class UCameraComponent* CameraComponent;
@@ -100,6 +102,9 @@ public:
 	//Grab Input 버튼 땔때 실행됨 
 	UFUNCTION(BlueprintCallable , Category = "Interaction")
 	void OnActionUnGrab();
+
+	UFUNCTION( BlueprintCallable , Category = "Interaction" )
+	void OnActionInteraction();
 
 	//Tick에서 실행됨
 	//만약에 bIsGrabbed이 True면 프레임마다 호출됨

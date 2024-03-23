@@ -194,6 +194,7 @@ void AHidePlayer::SetupPlayerInputComponent( UInputComponent* PlayerInputCompone
 		InputSystem->BindAction( IA_Run , ETriggerEvent::Completed , this , &AHidePlayer::ONIAUnRun );
 		InputSystem->BindAction( IA_Crouch , ETriggerEvent::Started , this , &AHidePlayer::OnIACrouch );
 		InputSystem->BindAction( IA_Crouch , ETriggerEvent::Completed , this , &AHidePlayer::OnIAUnCrouch );
+		InputSystem->BindAction( IA_UI_Interaction , ETriggerEvent::Completed , this , &AHidePlayer::OnActionInteraction );
 	}
 }
 
@@ -499,6 +500,10 @@ void AHidePlayer::OnActionUnGrab()
 	bIsGrabbed = false;
 	GrabbedObject = nullptr;
 	CableActor = nullptr;
+}
+
+void AHidePlayer::OnActionInteraction()
+{
 }
 
 void AHidePlayer::RightGrabbing()
