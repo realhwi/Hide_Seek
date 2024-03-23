@@ -30,3 +30,12 @@ InGame 	== MainMap
 Batch File 주소 설정
 "C:\Program Files\Epic Games\UE_5.3\Engine\Binaries\Win64\UnrealEditor.exe" "D:\Project_Git\Hide_Seek\Hide_Seek.uproject" -game -ResX=640 -ResY=480 -WinX=200 -WinY=300 -log
 																				^ 이 부분을 수정 ^
+																				
+===================================
+
+MainMap에서 SM_Capsule 지우고 Mandol 폴더에 BP_EnemyAltar로 교체했습니다.
+BP_EnemyAltar가 제단입니다.
+제단 앞에서 생명칩이 하나 이상 있을 때 f키 누르면 생명칩을 하나씩 바칩니다.
+3개가 되면 Enemy가 승리하고 Enemy 승리 UI가 뜹니다.
+
+시간이 5분이 되도록 Player가 탈출을 못해도 Enemy가 승리하고 Enemy 승리 UI가 뜹니다.
