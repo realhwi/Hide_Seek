@@ -3,9 +3,7 @@
 
 #include "Cable.h"
 #include "CableComponent.h"
-#include "CableManager.h"
 #include "HidePlayer.h"
-#include "Kismet/GameplayStatics.h"
 
 
 // TMap<int32 , bool> ACable::MaterialsAppliedStatus;

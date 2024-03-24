@@ -6,7 +6,6 @@
 #include <EnhancedInputSubsystems.h>
 #include <InputActionValue.h>
 #include "Cable.h"
-#include "CableComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Engine/LocalPlayer.h"
@@ -16,13 +15,12 @@
 #include "PlayerUI.h"
 #include "GameOver.h"
 #include "VREnemyPlayer.h"
-#include "Components/SphereComponent.h"
-#include "Components/WidgetComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
+#include "Components/WidgetComponent.h"
 
-class UWidgetComponent;
+
 // Sets default values
 AHidePlayer::AHidePlayer()
 {
@@ -38,6 +36,9 @@ AHidePlayer::AHidePlayer()
 	CameraComponent->Mobility = EComponentMobility::Movable;
 	CameraComponent->SetRelativeLocation( FVector( 0 , 0 , 90 ) );
 
+	playerWidgetComp = CreateDefaultSubobject<UWidgetComponent>( TEXT( "playerWidgetComp" ) );
+	playerWidgetComp->SetupAttachment( CameraComponent );
+
 	//MotionController
 	LeftController = CreateDefaultSubobject<UMotionControllerComponent>( TEXT( "Left Controller" ) );
 	LeftController->SetupAttachment( GetRootComponent() );
@@ -50,7 +51,7 @@ AHidePlayer::AHidePlayer()
 	// RightController->SetTrackingMotionSource(FName("Right"));
 
 	GetMesh()->SetupAttachment( GetCapsuleComponent() );
-	GetMesh()->SetRelativeLocation( FVector( 0.0f , 0.0f , 0.0f ) ); // 이 값은 실제 필요한 값으로 조정해야 합니다.
+	GetMesh()->SetRelativeLocation( FVector( 0.0f , 0.0f , 0.0f ) );
 
 	//Hand Mesh
 	LeftHandMesh = CreateDefaultSubobject<UStaticMeshComponent>( TEXT( "Left Hand Mesh" ) );
@@ -62,9 +63,9 @@ AHidePlayer::AHidePlayer()
 	// RightHandMesh->SetupAttachment(RightController);
 
 	RightHandMesh->SetCollisionEnabled( ECollisionEnabled::QueryOnly );
-	RightHandMesh->SetCollisionObjectType( ECC_GameTraceChannel2 ); // You can define your own game trace channel
+	RightHandMesh->SetCollisionObjectType( ECC_GameTraceChannel2 ); 
 	RightHandMesh->SetCollisionResponseToAllChannels( ECR_Ignore );
-	RightHandMesh->SetCollisionResponseToChannel( ECC_PhysicsBody , ECR_Overlap ); // Respond to overlap events with physics bodies
+	RightHandMesh->SetCollisionResponseToChannel( ECC_PhysicsBody , ECR_Overlap );
 
 	//RightHandMesh->OnComponentBeginOverlap.AddDynamic( this , &AHidePlayer::OnHandMeshOverlapBegin );
 
@@ -74,28 +75,8 @@ AHidePlayer::AHidePlayer()
 	LeftController->SetCollisionResponseToAllChannels( ECR_Ignore );
 	LeftController->SetCollisionResponseToChannel( ECC_Pawn , ECR_Overlap );
 
-	//static ConstructorHelpers::FObjectFinder<UStaticMesh> LeftMeshFinder( TEXT( "/Script/Engine.StaticMesh'/Game/JH/Models/left_OculusTouch_v2Controller.left_OculusTouch_v2Controller'" ) );
-	//if (LeftMeshFinder.Succeeded())
-	//{
-	//	LeftHandMesh->SetStaticMesh( LeftMeshFinder.Object );
-	//}
-
-	//// Find and attach the static mesh for RightHandMesh
-	//static ConstructorHelpers::FObjectFinder<UStaticMesh> RightMeshFinder( TEXT( "/Script/Engine.StaticMesh'/Game/JH/Models/right_OculusTouch_v2Controller.right_OculusTouch_v2Controller'" ) );
-	//if (RightMeshFinder.Succeeded())
-	//{
-	//	RightHandMesh->SetStaticMesh( RightMeshFinder.Object );
-	//}
-
-	/*if(GetMesh())
-	{
-		static ConstructorHelpers::FObjectFinder<USkeletalMesh> MeshFinder( TEXT( "/Script/Engine.SkeletalMesh'/Game/Characters/Mannequins/Meshes/SKM_Quinn_Simple.SKM_Quinn_Simple'" ) );
-		GetMesh()->SetSkeletalMesh( MeshFinder.Object);
-	}*/
-
 	CableActor = nullptr; // 초기화
 	bIsGrabbed = true;
-
 }
 
 
@@ -108,21 +89,22 @@ void AHidePlayer::BeginPlay()
 	GetCapsuleComponent()->SetCollisionEnabled( ECollisionEnabled::QueryOnly );
 	GetCapsuleComponent()->SetCollisionResponseToChannel( ECollisionChannel::ECC_Pawn , ECollisionResponse::ECR_Overlap );
 
+	playerWidgetComp->SetVisibility( false );
+
 	APlayerController* Playercontroller = Cast<APlayerController>( GetWorld()->GetFirstPlayerController() );
 
-	// 위젯 인스턴스 생성 및 화면에 추가
-	if (playerUIFactory)
+	if (playerWidgetComp)
 	{
-		playerUI = CreateWidget<UPlayerUI>( GetWorld() , playerUIFactory );
+		playerUI = Cast<UPlayerUI>( playerWidgetComp->GetUserWidgetObject() );
 		if (playerUI)
 		{
-			playerUI->AddToViewport();
-			for (int32 i = 0; i < LifeCount; i++)
+			for (int32 i = 0; i < LifeCount; ++i)
 			{
 				playerUI->AddLife();
 			}
 		}
 	}
+
 	if (playerUI)
 	{
 		playerUI->OnLifeDepleted.AddDynamic( this , &AHidePlayer::OnLifeDepleted );
@@ -150,7 +132,6 @@ void AHidePlayer::BeginPlay()
 	UMeshComponent* PlayerMesh = GetMesh();
 	OriginalMaterial1 = PlayerMesh->GetMaterial( 0 );
 	OriginalMaterial2 = PlayerMesh->GetMaterial( 1 );
-
 }
 
 // Called every frame
@@ -173,7 +154,6 @@ void AHidePlayer::Tick( float DeltaTime )
 		FRotator ControllerRotation = RightController->GetComponentRotation();
 		//UE_LOG( LogTemp , Warning , TEXT( "RightController Location: %s, Rotation: %s" ) , *ControllerLocation.ToString() , *ControllerRotation.ToString() );
 	}
-	
 }
 
 // Called to bind functionality to input
@@ -194,7 +174,7 @@ void AHidePlayer::SetupPlayerInputComponent( UInputComponent* PlayerInputCompone
 		InputSystem->BindAction( IA_Run , ETriggerEvent::Completed , this , &AHidePlayer::ONIAUnRun );
 		InputSystem->BindAction( IA_Crouch , ETriggerEvent::Started , this , &AHidePlayer::OnIACrouch );
 		InputSystem->BindAction( IA_Crouch , ETriggerEvent::Completed , this , &AHidePlayer::OnIAUnCrouch );
-		InputSystem->BindAction( IA_UI_Interaction , ETriggerEvent::Completed , this , &AHidePlayer::OnActionInteraction );
+		InputSystem->BindAction( IA_Menu , ETriggerEvent::Triggered , this , &AHidePlayer::OnActionInventory );
 	}
 }
 
@@ -218,15 +198,6 @@ void AHidePlayer::Move( const FInputActionValue& Value )
 
 	// 이동 입력을 추가
 	AddMovementInput( MovementDirection , 25.0f );
-
-	//PC 일때 사용
-	/*AddMovementInput( GetActorForwardVector() , MovementVector.X );
-	AddMovementInput( GetActorRightVector() , MovementVector.Y );*/
-
-	//VR 일때 카메라 기준으로 해야함
-	//예) GetComponentForward??
-	/*AddMovementInput(CameraComponent->GetForwardVector(), MovementVector.X);
-	AddMovementInput(CameraComponent->GetRightVector(), MovementVector.Y);*/
 }
 
 void AHidePlayer::Look( const FInputActionValue& Value )
@@ -502,8 +473,17 @@ void AHidePlayer::OnActionUnGrab()
 	CableActor = nullptr;
 }
 
-void AHidePlayer::OnActionInteraction()
+void AHidePlayer::OnActionInventory()
 {
+	InventoryVisibility();
+}
+
+void AHidePlayer::InventoryVisibility()
+{
+	if (playerWidgetComp)
+	{
+		playerWidgetComp->SetVisibility( !playerWidgetComp->IsVisible() );
+	}
 }
 
 void AHidePlayer::RightGrabbing()
@@ -568,7 +548,7 @@ void AHidePlayer::OnOverlapBegin( UPrimitiveComponent* OverlappedComp , AActor* 
 {
 	if (OtherActor != nullptr && OtherActor != this && OtherActor->IsA( AVREnemyPlayer::StaticClass() ))
 	{
-		//UE_LOG( LogTemp , Warning , TEXT( "Overlapped!!" ) );
+		UE_LOG( LogTemp , Warning , TEXT( "Overlapped!!" ) );
 		// count가 0 이하라면 함수 종료 
 		if (LifeCount <= 0)
 		{
@@ -602,6 +582,7 @@ void AHidePlayer::OnOverlapEnd( UPrimitiveComponent* OverlappedComp , AActor* Ot
 	bLifeRemove = false;
 }
 
+
 void AHidePlayer::IncreaseLife()
 {
 	if (LifeCount < maxLifeCount && LifeCount >= 0)
@@ -610,18 +591,6 @@ void AHidePlayer::IncreaseLife()
 		if (playerUI)
 		{
 			playerUI->AddLife();
-		}
-	}
-}
-
-void AHidePlayer::OnLifeDepleted()
-{
-	if (GameOverUIFactory != nullptr)
-	{
-		GameOverUI = CreateWidget<UGameOver>( GetWorld() , GameOverUIFactory );
-		if (GameOverUI != nullptr)
-		{
-			GameOverUI->AddToViewport();
 		}
 	}
 }
@@ -684,7 +653,10 @@ void AHidePlayer::OnRep_TookInvisibleItem()
 void AHidePlayer::ResetVisibility()
 {
 	bIsHidden = !bIsHidden;
-	OnRep_TookInvisibleItem(); 
+	OnRep_TookInvisibleItem();
+
+	GetMesh()->SetMaterial( 0 , OriginalMaterial1 );
+	GetMesh()->SetMaterial( 1 , OriginalMaterial2 );
 }
 
 void AHidePlayer::GetLifetimeReplicatedProps( TArray<FLifetimeProperty>& OutLifetimeProps ) const

@@ -4,16 +4,16 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "SpeedItem.generated.h"
+#include "BlueKey.generated.h"
 
 UCLASS()
-class HIDE_SEEK_API ASpeedItem : public AActor
+class HIDE_SEEK_API ABlueKey : public AActor
 {
 	GENERATED_BODY()
 	
 public:	
 	// Sets default values for this actor's properties
-	ASpeedItem();
+	ABlueKey();
 
 protected:
 	// Called when the game starts or when spawned
@@ -24,18 +24,11 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 	UPROPERTY( EditAnywhere , BlueprintReadWrite , Category = "Effects" )
-	class UNiagaraComponent* SpeedComp;
+	class UStaticMeshComponent* blueComp;
 	UPROPERTY( EditAnywhere , BlueprintReadWrite , Category = "Sphere" )
 	class USphereComponent* SphereComp;
 
 	UFUNCTION()
 	void OnOverlapBegin( UPrimitiveComponent* OverlappedComponent , AActor* OtherActor , UPrimitiveComponent* OtherComp , int32 OtherBodyIndex , bool bFromSweep , const FHitResult& SweepResult );
-
-	UPROPERTY( VisibleAnywhere , BlueprintReadOnly , Category = "SpeedItem" )
-	bool bHasOverlapped = false;
-	// This is the flag
-
-
-	//void RestorePlayerSpeed();
 
 };

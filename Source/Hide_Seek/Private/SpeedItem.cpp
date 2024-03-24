@@ -2,12 +2,11 @@
 
 
 #include "SpeedItem.h"
-#include "HiddenItem.h"
 #include "HidePlayer.h"
 #include "NiagaraComponent.h"
-#include "VREnemyPlayer.h"
+#include "PlayerUI.h"
+#include "Components/Image.h"
 #include "Components/SphereComponent.h"
-#include "Kismet/GameplayStatics.h"
 
 // Sets default values
 ASpeedItem::ASpeedItem()
@@ -43,19 +42,21 @@ void ASpeedItem::OnOverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor
 {
 	if (!bHasOverlapped)
 	{
-		if (AHidePlayer* HidePlayer = Cast<AHidePlayer>( OtherActor ))
+		AHidePlayer* HidePlayer = Cast<AHidePlayer>( OtherActor );
+		if (!HidePlayer) 
 		{
-			if (AVREnemyPlayer* VREnemyPlayer = Cast<AVREnemyPlayer>( UGameplayStatics::GetPlayerCharacter( GetWorld() , 0 ) ))
-			{
-				UE_LOG( LogTemp , Warning , TEXT( "ChangeSpeed." ) );
-				VREnemyPlayer->ChangeSpeed();
-				bHasOverlapped = true;
-			}
-			UE_LOG( LogTemp , Warning , TEXT( "Overlap." ) );
-			Destroy();
+			return;
 		}
+		UPlayerUI* playerUI = Cast<UPlayerUI>( HidePlayer->playerWidgetComp->GetUserWidgetObject() );
+		if (playerUI && playerUI->speed)
+		{
+			playerUI->speed->SetVisibility( ESlateVisibility::Visible );
+			bHasOverlapped = true;
+		}
+		Destroy();
 	}
 }
+
 
 /*if(!HasAuthority())
 			{
