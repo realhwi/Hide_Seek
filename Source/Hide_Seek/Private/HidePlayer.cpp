@@ -279,7 +279,7 @@ void AHidePlayer::OnGrabInteract( AInteraction* InteractionActor )
 	InteractionActor->OnGrabInteract( this );
 }
 
-const float MinGrabDistance = 15.0f;
+const float MinGrabDistance = 10.0f;
 void AHidePlayer::CheckOverlapWithNewEndStaticMesh()
 {
 	//UE_LOG( LogTemp , Warning , TEXT( "CheckOverlapWithNewEndStaticMesh called. bIsGrabbed: %s, CableActor: %s" ) , bIsGrabbed ? TEXT( "true" ) : TEXT( "false" ) , CableActor ? *CableActor->GetName() : TEXT( "nullptr" ) );
@@ -452,7 +452,7 @@ void AHidePlayer::OnActionUnGrab()
 			GrabbedObject->SetCollisionEnabled( ECollisionEnabled::QueryAndPhysics );
 
 			//던지기 힘 10%만 사용 
-			float ReducedThrowStrength = ThrowStrength * 1.0f;
+			float ReducedThrowStrength = ThrowStrength * 5.0f;
 			GrabbedObject->AddForce( ThrowDirection * ThrowStrength * GrabbedObject->GetMass() );
 
 			// 물건을 회전하기, 회전 10%만 사용
@@ -460,7 +460,7 @@ void AHidePlayer::OnActionUnGrab()
 
 			//저장한 Quaternion인 Delta 회전값에서 Axis and Angle 추출하기
 			DeltaRotation.ToAxisAndAngle( Axis , Angle );
-			Angle *= 0.1f;
+			Angle *= 0.3f;
 			float ReducedTorquePower = TorquePower * 1.0f;
 			FVector AngularVelocity = Axis * FMath::DegreesToRadians( Angle ) / GetWorld()->DeltaTimeSeconds;
 			GrabbedObject->SetPhysicsAngularVelocityInRadians( AngularVelocity * ReducedTorquePower , true );
@@ -515,7 +515,7 @@ void AHidePlayer::PerformLineTrace()
 		// ForwardVector와 DownVector를 조합하여 라인트레이스의 방향을 아래로
 		// 여기서는 ForwardVector의 90%와 DownVector의 10%를 조합
 		FVector Direction = ForwardVector * 0.8f + DownVector * 0.2f;
-		Direction.Normalize(); // 방향 벡터를 정규화합니다.
+		Direction.Normalize(); 
 		// 선의 길이를 5000으로 조정
 		FVector End = Start + ForwardVector * 1000;
 		FHitResult HitResult;
