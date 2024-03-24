@@ -7,8 +7,6 @@
 #include "Kismet/GameplayStatics.h"
 
 
-int32 ACable::ApplyMaterialsCallCount = 0;
-int32 ACable::TotalBlueprintInstances = 3;
 // TMap<int32 , bool> ACable::MaterialsAppliedStatus;
 ACable::ACable()
 {
@@ -53,9 +51,8 @@ ACable::ACable()
 	NewEndMesh2 = CreateDefaultSubobject<UStaticMeshComponent>( TEXT( "NewEndMesh2" ) );
 	NewEndMesh2->SetupAttachment( RootComponent );
 
-	CurrentStage = ConnectionStage::Init;
-	// ExpectedNumMaterialsApplied = 3;
 }
+
 
 // Called when the game starts or when spawned
 void ACable::BeginPlay()
@@ -176,10 +173,6 @@ void ACable::CheckAndApplyMaterial()
 
 void ACable::ApplyMaterials()
 {
-	/*for (const auto& Status : MaterialsAppliedStatus)
-	{
-		UE_LOG( LogTemp , Warning , TEXT( "Index: %d, Applied: %s" ) , Status.Key , Status.Value ? TEXT( "True" ) : TEXT( "False" ) );
-	}*/
 
 	// 세 컴포넌트 세트가 각각 올바르게 연결된 경우, 머터리얼 변경
 	StartStaticMesh->SetMaterial( 0 , Material1 );
@@ -194,54 +187,8 @@ void ACable::ApplyMaterials()
 	CableComp2->SetMaterial( 0 , Material3 );
 	NewEndMesh2->SetMaterial( 0 , Material3 );
 
-	// ApplyMaterials 호출 횟수 증가
-	ApplyMaterialsCallCount++;
-	UE_LOG( LogTemp , Warning , TEXT( "ApplyMaterials called. Current count: %d" ) , ApplyMaterialsCallCount );
+	bApplyMaterial = true;
 
-
-	// 모든 인스턴스가 ApplyMaterials를 호출했는지 확인
-	if (ApplyMaterialsCallCount >= TotalBlueprintInstances)
-	{
-		UE_LOG( LogTemp , Warning , TEXT( "All instances have called ApplyMaterials. Executing VFX and setting stage to Final." ) );
-		// VFX 실행
-		ExecuteVFX();
-		// 모든 처리가 끝났다면 상태를 Final로 변경
-		CurrentStage = ConnectionStage::Final;
-		UE_LOG( LogTemp , Warning , TEXT( "Stage is now Final." ) );
-	}
-
-	//// 현재 인스턴스의 Index로 맵을 업데이트
-	//if (!MaterialsAppliedStatus.Contains( Index )) {
-	//	MaterialsAppliedStatus.Add( Index , true );
-	//	UE_LOG( LogTemp , Warning , TEXT( "Index: %d marked as applied." ) , Index );
-	//}
-	//else {
-	//	// 이미 존재하는 경우, 추가 로직 없음
-	//	UE_LOG( LogTemp , Warning , TEXT( "Index: %d already applied, skipping." ) , Index );
-	//}
-
-	//// 모든 인스턴스가 ApplyMaterials를 호출했는지 확인
-	//if (MaterialsAppliedStatus.Num() >= ExpectedNumMaterialsApplied) {
-	//	bool allApplied = true;
-	//	for (const auto& Elem : MaterialsAppliedStatus) {
-	//		if (!Elem.Value) {
-	//			allApplied = false;
-	//			break;
-	//		}
-	//	}
-
-	//	if (allApplied) {
-	//		// VFX 실행
-	//		AHidePlayer* PlayerActor = Cast<AHidePlayer>( UGameplayStatics::GetPlayerCharacter( GetWorld() , 0 ) );
-	//		if (PlayerActor && VFX) {
-	//			UE_LOG( LogTemp , Warning , TEXT( "VFX" ) );
-	//			UGameplayStatics::SpawnEmitterAtLocation( GetWorld() , VFX , PlayerActor->GetActorLocation() );
-
-	//			// 맵을 초기화하여 다음 번 사용을 위해 준비합니다.
-	//			MaterialsAppliedStatus.Empty();
-	//		}
-	//	}
-	//}
 }
 
 void ACable::ResetToInitialPositions()
@@ -285,54 +232,6 @@ void ACable::ResetToInitialPositions()
 		*MoveMesh2->GetComponentLocation().ToString() );
 }
 
-void ACable::UpdateStage()
-{
-	if (CurrentStage == ConnectionStage::Init)
-	{
-		UE_LOG( LogTemp , Warning , TEXT( "Stage changing from Init to Mid." ) );
-		CurrentStage = ConnectionStage::Mid;
-	}
-	else if (CurrentStage == ConnectionStage::Mid)
-	{
-		UE_LOG( LogTemp , Warning , TEXT( "Stage changing from Mid to Complete." ) );
-		CurrentStage = ConnectionStage::Complete;
-		UE_LOG( LogTemp , Warning , TEXT( "Stage is now Complete." ) );
-	}
-}
-
-void ACable::ExecuteVFX()
-{
-	if (CurrentStage != ConnectionStage::Complete)
-	{
-		UE_LOG( LogTemp , Warning , TEXT( "ExecuteVFX called, but the current stage is not Complete." ) );
-		return;
-	}
-
-	AHidePlayer* PlayerActor = Cast<AHidePlayer>( UGameplayStatics::GetPlayerCharacter( GetWorld() , 0 ) );
-	if (!PlayerActor)
-	{
-		UE_LOG( LogTemp , Error , TEXT( "Failed to cast to AHidePlayer or get the player character." ) );
-		return;
-	}
-
-	if (!VFX)
-	{
-		UE_LOG( LogTemp , Error , TEXT( "VFX is nullptr." ) );
-		return;
-	}
-
-	/*UE_LOG( LogTemp , Warning , TEXT( "Executing VFX at player location." ) );
-	UGameplayStatics::SpawnEmitterAtLocation( GetWorld() , VFX , PlayerActor->GetActorLocation() );
-	if (CurrentStage == ConnectionStage::Complete)
-	{
-		AHidePlayer* PlayerActor = Cast<AHidePlayer>( UGameplayStatics::GetPlayerCharacter( GetWorld() , 0 ) );
-		if (PlayerActor && VFX) 
-		{
-			UE_LOG( LogTemp , Warning , TEXT( "VFX" ) );
-			UGameplayStatics::SpawnEmitterAtLocation( GetWorld() , VFX , PlayerActor->GetActorLocation() );
-		}
-	}*/
-}
 
 void ACable::ResetConnectionStates()
 {
