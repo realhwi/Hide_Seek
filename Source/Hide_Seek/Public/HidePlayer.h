@@ -238,6 +238,10 @@ public:
 
 	void UpdateTriggerStatus(bool bPressed);
 
+	// 추가 =========================================
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	class AVREnemyPlayer* vrEnemyPlayer;
+
 	// 네트워크 -----------------------------------------------------
 	// 클라이언트에서 실행할 RPC 구현 
 

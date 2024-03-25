@@ -147,8 +147,8 @@ public:
 	UPROPERTY( EditAnywhere , BlueprintReadWrite, Replicated)
 	bool canCheckActor;
 
-	UFUNCTION( Server , Reliable )
-	void ServerChangeSpeed();
+	//UFUNCTION( Server , Reliable )
+	//void ServerChangeSpeed();
 
 	UFUNCTION(Server, Reliable)
 	void ServerRPC_ActionHandUp();

@@ -548,6 +548,9 @@ void AHidePlayer::OnOverlapBegin( UPrimitiveComponent* OverlappedComp , AActor* 
 {
 	if (OtherActor != nullptr && OtherActor != this && OtherActor->IsA( AVREnemyPlayer::StaticClass() ))
 	{
+		// 추가 코드
+		vrEnemyPlayer = Cast<AVREnemyPlayer>(OtherActor);
+
 		UE_LOG( LogTemp , Warning , TEXT( "Overlapped!!" ) );
 		// count가 0 이하라면 함수 종료 
 		if (LifeCount <= 0)
@@ -556,7 +559,11 @@ void AHidePlayer::OnOverlapBegin( UPrimitiveComponent* OverlappedComp , AActor* 
 			return;
 		}
 		// 생명 카운트 다운 
-		LifeCount--;
+		LifeCount = LifeCount -1;
+
+		// 추가 코드
+		vrEnemyPlayer->countHPChip = vrEnemyPlayer->countHPChip + 1;
+
 		if (playerUI)
 		{
 			playerUI->RemoveLife( LifeCount );
