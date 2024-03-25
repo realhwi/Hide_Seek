@@ -238,7 +238,7 @@ public:
 
 	void UpdateTriggerStatus(bool bPressed);
 
-	// 추가 =========================================
+	// 추가 =====================
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	class AVREnemyPlayer* vrEnemyPlayer;
 

@@ -27,7 +27,6 @@ AHidePlayer::AHidePlayer()
 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
-	// Radius default = 42.f
 	GetCapsuleComponent()->InitCapsuleSize( 42.f , 96.0f );
 
 	//camera Comp
@@ -549,7 +548,7 @@ void AHidePlayer::OnOverlapBegin( UPrimitiveComponent* OverlappedComp , AActor* 
 {
 	if (OtherActor != nullptr && OtherActor != this && OtherActor->IsA( AVREnemyPlayer::StaticClass() ))
 	{
-		// 추가 코드
+		// 추가 ================
 		vrEnemyPlayer = Cast<AVREnemyPlayer>(OtherActor);
 
 		UE_LOG( LogTemp , Warning , TEXT( "Overlapped!!" ) );
@@ -560,11 +559,10 @@ void AHidePlayer::OnOverlapBegin( UPrimitiveComponent* OverlappedComp , AActor* 
 			return;
 		}
 		// 생명 카운트 다운 
-		LifeCount = LifeCount -1;
+		LifeCount--;
 
-		// 추가 코드
 		vrEnemyPlayer->countHPChip = vrEnemyPlayer->countHPChip + 1;
-
+		
 		if (playerUI)
 		{
 			playerUI->RemoveLife( LifeCount );
