@@ -1,1 +1,1 @@
-"C:\Program Files\Epic Games\UE_5.3\Engine\Binaries\Win64\UnrealEditor.exe" "D:\Work\Seek_Hide\Hide_Seek.uproject" -game -ResX=640 -ResY=480 -WinX=200 -WinY=300 -log
+"C:\UE_5.3\Engine\Binaries\Win64\UnrealEditor.exe" "C:\Users\ASUS\Desktop\Hide_Seek\Hide_Seek.uproject" -game -ResX=640 -ResY=480 -WinX=200 -WinY=300 -log
