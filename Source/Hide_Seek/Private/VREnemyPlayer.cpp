@@ -76,7 +76,7 @@ void AVREnemyPlayer::BeginPlay()
 {
 	Super::BeginPlay();
 
-	UHeadMountedDisplayFunctionLibrary::SetTrackingOrigin(EHMDTrackingOrigin::Eye);
+	UHeadMountedDisplayFunctionLibrary::SetTrackingOrigin(EHMDTrackingOrigin::Floor);
 
 	//UE_LOG( LogTemp , Warning , TEXT( "beginplay" ) )
 
