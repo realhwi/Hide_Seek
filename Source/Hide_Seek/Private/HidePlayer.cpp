@@ -27,6 +27,7 @@ AHidePlayer::AHidePlayer()
 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
+	// Radius default = 42.f
 	GetCapsuleComponent()->InitCapsuleSize( 42.f , 96.0f );
 
 	//camera Comp
