@@ -168,8 +168,8 @@ public:
 	UPROPERTY( EditAnywhere , BlueprintReadWrite , Replicated )
 	bool isEnemyLose = false;
 
-	//UFUNCTION( Server , Reliable )
-	//void ServerRPC_EnemyPlayerWin();
+	UFUNCTION( Server , Reliable )
+	void ServerRPC_EnemyPlayerWin();
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated)
 	bool isPraying;

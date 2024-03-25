@@ -119,7 +119,7 @@ void AVREnemyPlayer::Tick(float DeltaTime)
 	SecondSkillActive();
 	ThirdSkillActive();
 
-	// ServerRPC_EnemyPlayerWin();
+	ServerRPC_EnemyPlayerWin();
 }
 
 // Called to bind functionality to input
@@ -314,6 +314,13 @@ void AVREnemyPlayer::ServerRPC_EscapeLock_Implementation()
 //	}
 //}
 
+void AVREnemyPlayer::ServerRPC_EnemyPlayerWin_Implementation()
+{
+	if(isAltarActivate == true || setAltarOnChip >= 3)
+
+	isEnemyWin = true;
+}
+
 void AVREnemyPlayer::GetLifetimeReplicatedProps( TArray<FLifetimeProperty>& OutLifetimeProps ) const
 {
 	Super::GetLifetimeReplicatedProps( OutLifetimeProps );
@@ -326,5 +333,6 @@ void AVREnemyPlayer::GetLifetimeReplicatedProps( TArray<FLifetimeProperty>& OutL
 	DOREPLIFETIME( AVREnemyPlayer , canEscapeLock )
 	DOREPLIFETIME( AVREnemyPlayer , isAltarActivate )
 	DOREPLIFETIME( AVREnemyPlayer , isPraying )
+	DOREPLIFETIME(AVREnemyPlayer, isEnemyWin)
 	DOREPLIFETIME( AVREnemyPlayer , isEnemyLose )
 }
