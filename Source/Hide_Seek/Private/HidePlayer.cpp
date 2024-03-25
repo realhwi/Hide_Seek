@@ -13,7 +13,6 @@
 #include "GameFramework/Actor.h"
 #include "HeadMountedDisplayFunctionLibrary.h"
 #include "PlayerUI.h"
-#include "GameOver.h"
 #include "VREnemyPlayer.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
@@ -27,7 +26,7 @@ AHidePlayer::AHidePlayer()
 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
-	GetCapsuleComponent()->InitCapsuleSize( 42.f , 160.0f );
+	GetCapsuleComponent()->InitCapsuleSize( 42.f , 96.f);
 
 	//camera Comp
 	CameraComponent = CreateDefaultSubobject<UCameraComponent>( TEXT( "CameraComponent" ) );
