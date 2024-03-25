@@ -7,13 +7,7 @@
 #include "Delegates/Delegate.h"
 #include "Cable.generated.h"
 
-enum class ConnectionStage : uint8
-{
-	Init ,
-	Mid ,
-	Complete,
-	Final 
-};
+
 class AHidePlayer;
 
 UCLASS()
@@ -89,25 +83,13 @@ public:
 	void ApplyMaterials();
 	void ResetToInitialPositions();
 
-	ConnectionStage GetCurrentStage() const { return CurrentStage; }
-
-	void UpdateStage();
-	void ExecuteVFX();
-
-	
-	//static TMap<int32 , bool> MaterialsAppliedStatus;
-	//int32 ExpectedNumMaterialsApplied;
-
-	//UPROPERTY( EditAnywhere , BlueprintReadWrite , Category = "Cable" )
-	//int32 Index; // 각 인스턴스에 고유 식별자로 사용될 변수
 
 private:
-	// 현재 연결 상태를 추적하는 변수
-	ConnectionStage CurrentStage;
 
 	bool bIsCableComponentConnected = false;
 	bool bIsCableComp1Connected = false;
 	bool bIsCableComp2Connected = false;
+	//bool bApplyMaterialChange = false;
 
 	FVector InitialMoveMeshLocation;
 	FVector InitialMoveMesh1Location;
@@ -119,7 +101,11 @@ private:
 	int32 ConnectionCompletedCount = 0; // 연결 완료 횟수 추적
 	const int32 TotalCableComponents = 3; // 전체 케이블 컴포넌트 수
 
-	static int32 ApplyMaterialsCallCount;
-	static int32 TotalBlueprintInstances;
+public:
+	UPROPERTY()
+	bool bApplyMaterial;
+
+	UPROPERTY()
+	class ACableManager* Manager;
 
 };

@@ -10,7 +10,7 @@
 #include "Components/WidgetComponent.h"
 #include "HidePlayer.generated.h"
 
-class ACable; // 전방 선언을 추가합니다.
+class ACable;
 UCLASS()
 class HIDE_SEEK_API AHidePlayer : public ACharacter
 {
@@ -48,6 +48,10 @@ public:
 	class UInputAction* IA_Run;
 	UPROPERTY(EditAnywhere , BlueprintReadOnly , Category = Input , meta = (AllowPrivateAccess = "true"))
 	class UInputAction* IA_Crouch;
+	UPROPERTY( EditAnywhere , BlueprintReadOnly , Category = Input , meta = (AllowPrivateAccess = "true") )
+	class UInputAction* IA_Menu;
+	UPROPERTY( EditAnywhere , BlueprintReadOnly , Category = Input , meta = (AllowPrivateAccess = "true") )
+	class UInputAction* ToggleDebug;
 
 	UPROPERTY(EditAnywhere , BlueprintReadWrite , Category = "Player Settings | Player")
 	class UCameraComponent* CameraComponent;
@@ -101,6 +105,18 @@ public:
 	UFUNCTION(BlueprintCallable , Category = "Interaction")
 	void OnActionUnGrab();
 
+	UFUNCTION( BlueprintCallable , Category = "Interaction" )
+	void OnActionInventory();
+
+	UFUNCTION( BlueprintCallable )
+	void InventoryVisibility();
+
+	UPROPERTY( EditDefaultsOnly , BlueprintReadWrite )
+	class UPlayerUI* playerUI;
+
+	UPROPERTY( EditAnywhere , BlueprintReadWrite , Category = "Components" )
+	class UWidgetComponent* playerWidgetComp;
+	
 	//Tick에서 실행됨
 	//만약에 bIsGrabbed이 True면 프레임마다 호출됨
 	UFUNCTION()
@@ -190,22 +206,6 @@ public:
 	virtual void OnOverlapEnd(UPrimitiveComponent* OverlappedComp , AActor* OtherActor ,
 	                          UPrimitiveComponent* OtherComp , int32 OtherBodyIndex);
 
-
-	UPROPERTY(EditDefaultsOnly , BlueprintReadWrite)
-	class UPlayerUI* playerUI;
-
-	UPROPERTY(EditDefaultsOnly , BlueprintReadWrite)
-	TSubclassOf<class UPlayerUI> playerUIFactory;
-
-	UPROPERTY(VisibleAnywhere , BlueprintReadOnly , Category = "Components")
-	UWidgetComponent* playerWidgetComponent;
-
-	UPROPERTY(EditDefaultsOnly)
-	class UGameOver* GameOverUI;
-
-	UPROPERTY(EditDefaultsOnly , BlueprintReadWrite)
-	TSubclassOf<class UGameOver> GameOverUIFactory;
-
 	// 생명 최대 값 
 	UPROPERTY(EditDefaultsOnly)
 	int32 maxLifeCount = 4;
@@ -217,17 +217,15 @@ public:
 	UFUNCTION()
 	void IncreaseLife();
 
-	
-
 	// 충돌 확인 
 	UPROPERTY(EditAnywhere)
 	class UParticleSystem* VFX;
 
 	// Die 
-	UFUNCTION(BlueprintCallable , Category = "Player")
+	UFUNCTION( BlueprintImplementableEvent , Category = "Player" )
 	void OnLifeDepleted();
 
-	UFUNCTION()
+	UFUNCTION( BlueprintCallable )
 	bool LifeRemove();
 
 	// 생명 하나 감소, 이게 true가되면 텔레포트 하기
@@ -251,6 +249,12 @@ public:
 
 	UFUNCTION()
 	void OnRep_TookInvisibleItem();
+
+	UFUNCTION()
+
+	void ResetVisibility();
+
+	FTimerHandle VisibilityTimerHandle;
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 };

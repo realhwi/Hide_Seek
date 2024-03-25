@@ -2,9 +2,10 @@
 
 
 #include "HiddenItem.h"
-
 #include "HidePlayer.h"
 #include "NiagaraComponent.h"
+#include "PlayerUI.h"
+#include "Components/Image.h"
 #include "Components/SphereComponent.h"
 
 // Sets default values
@@ -41,13 +42,15 @@ void AHiddenItem::OnOverlapBegin(UPrimitiveComponent* OverlappedComponent, AActo
 	if (!HidePlayer){
 		return;
 	}
-
-	//Server World의 내가 Overlap
-	if(HidePlayer->HasAuthority())
+	UPlayerUI* playerUI = Cast<UPlayerUI>( HidePlayer->playerWidgetComp->GetUserWidgetObject() );
+	if (playerUI && playerUI->hidden)
 	{
-		HidePlayer->ServerChangeVisibility();
+		// Set the visibility of the hidden image directly to Visible
+		playerUI->hidden->SetVisibility( ESlateVisibility::Visible );
 	}
-
 	Destroy();
 }
+
+
+
 
