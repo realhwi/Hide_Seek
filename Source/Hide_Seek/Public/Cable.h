@@ -48,7 +48,7 @@ public:
 	class UStaticMeshComponent* MoveMesh1;
 	UPROPERTY( EditAnywhere , BlueprintReadWrite , Category = "Cable" )
 	class UStaticMeshComponent* MoveMesh2;
-
+	
 	// Static Mesh for New End
 	UPROPERTY( EditAnywhere , BlueprintReadWrite , Category = "Cable" )
 	class UStaticMeshComponent* NewEndStaticMesh;
@@ -102,7 +102,7 @@ private:
 	const int32 TotalCableComponents = 3; // 전체 케이블 컴포넌트 수
 
 public:
-	UPROPERTY()
+	UPROPERTY( BlueprintReadOnly )
 	bool bApplyMaterial;
 
 	UPROPERTY()
